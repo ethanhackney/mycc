@@ -76,7 +76,25 @@ Token Lexer::Next(void)
                 case '/':
                         return _curr = Token{TOK_SLASH, "/"};
                 case '=':
+                        if ((c = nextchar()) == '=') {
+                                return _curr = Token{TOK_EQ, "=="};
+                        }
+                        _pc = c;
                         return _curr = Token{TOK_EQUALS, "="};
+                case '!':
+                        if ((c = nextchar()) == '=')
+                                return _curr = Token{TOK_NE, "!="};
+                        usage("bad character: %c", c);
+                case '<':
+                        if ((c = nextchar()) == '=')
+                                return _curr = Token{TOK_LE, "<="};
+                        _pc = c;
+                        return _curr = Token{TOK_LT, "<"};
+                case '>':
+                        if ((c = nextchar()) == '=')
+                                return _curr = Token{TOK_GE, ">="};
+                        _pc = c;
+                        return _curr = Token{TOK_GT, ">"};
                 case ';':
                         return _curr = Token{TOK_SEMI, ";"};
                 }

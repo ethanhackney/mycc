@@ -12,6 +12,12 @@ enum {
         AST_SUB,        // subtract
         AST_MUL,        // multiply
         AST_DIV,        // divide
+        AST_EQ,         // equal
+        AST_NE,         // not equal
+        AST_LT,         // less than
+        AST_GT,         // greater than
+        AST_LE,         // less than or equal
+        AST_GE,         // greater than or equal
         AST_INTLIT,     // integer literal
         AST_IDENT,      // identifier
         AST_LVIDENT,    // l-value identifier

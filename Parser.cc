@@ -49,30 +49,26 @@ Ast *Parser::parse_primary(void)
 
 static int tok2ast(int type)
 {
-        switch (type) {
-        case TOK_PLUS:
-                return AST_ADD;
-        case TOK_MINUS:
-                return AST_SUB;
-        case TOK_STAR:
-                return AST_MUL;
-        case TOK_SLASH:
-                return AST_DIV;
-        default:
-                usage("invalid operator: %s", Token{type, ""}.Name().c_str());
-                exit(EXIT_FAILURE);
-        }
+        if (type > TOK_EOF && type < TOK_INTLIT)
+                return type;
+        usage("invalid operator: %s", Token{type, ""}.Name().c_str());
+        exit(EXIT_FAILURE);
 }
 
 static int op_prec(int type)
 {
         static int prec[] = {
-                0,
-                10,
-                10,
-                20,
-                20,
-                0,
+                0,      // TOK_EOF
+                10,     // TOK_PLUS
+                10,     // TOK_MINUS
+                20,     // TOK_STAR
+                20,     // TOK_SLASH
+                30,     // TOK_EQ
+                30,     // TOK_NE
+                40,     // TOK_LT
+                40,     // TOK_GT
+                40,     // TOK_LE
+                40,     // TOK_GE
         };
 
         auto p = prec[type];

@@ -32,6 +32,20 @@ private:
         size_t movGlo(const std::string &id);
         // generate store for global variable
         size_t strGlo(size_t r, const std::string &id);
+        // generate instructions for comparison
+        size_t cmp(size_t i, size_t j, const std::string &how);
+        // generate instructions for equality test
+        size_t eq(size_t i, size_t j);
+        // generate instructions for not equal test
+        size_t ne(size_t i, size_t j);
+        // generate instructions for less than test
+        size_t lt(size_t i, size_t j);
+        // generate instructions for greater than test
+        size_t gt(size_t i, size_t j);
+        // generate instructions for less than or equal test
+        size_t le(size_t i, size_t j);
+        // generate instructions for greater than or equal test
+        size_t ge(size_t i, size_t j);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);

@@ -21,6 +21,12 @@ Token::Token(int type, const std::string &lex)
         case TOK_PRINT:
         case TOK_INT:
         case TOK_SEMI:
+        case TOK_EQ:
+        case TOK_NE:
+        case TOK_LT:
+        case TOK_GT:
+        case TOK_LE:
+        case TOK_GE:
                 break;
         default:
                 usage("bad token type: %d", _type);
@@ -52,6 +58,12 @@ std::string Token::Name(void) const
                 "TOK_PRINT",
                 "TOK_INT",
                 "TOK_SEMI",
+                "TOK_EQ",
+                "TOK_NE",
+                "TOK_LT",
+                "TOK_GT",
+                "TOK_LE",
+                "TOK_GE",
         };
         return names[_type];
 }

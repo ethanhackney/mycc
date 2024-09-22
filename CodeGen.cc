@@ -76,6 +76,18 @@ size_t CodeGen::GenAst(Ast *n, size_t r)
                 return mul(left, right);
         case AST_DIV:
                 return div(left, right);
+        case AST_EQ:
+                return eq(left, right);
+        case AST_NE:
+                return ne(left, right);
+        case AST_LT:
+                return lt(left, right);
+        case AST_GT:
+                return gt(left, right);
+        case AST_LE:
+                return le(left, right);
+        case AST_GE:
+                return ge(left, right);
         case AST_INTLIT:
                 return movInt(n->Int());
         case AST_IDENT:
@@ -154,4 +166,44 @@ void CodeGen::Free(void)
 void CodeGen::SetGlo(const std::string &id)
 {
         _tab.Set(id, new Sym{id});
+}
+
+size_t CodeGen::cmp(size_t i, size_t j, const std::string &how)
+{
+        std::string breg = std::string{_stk.Name(j)} + "b";
+        fprintf(_fp, "\tcmpq\t%s, %s\n", _stk.Name(j), _stk.Name(i));
+        fprintf(_fp, "\t%s\t%s\n", how.c_str(), breg.c_str());
+        fprintf(_fp, "\tandq\t$255, %s\n", _stk.Name(j));
+        _stk.Put(i);
+        return j;
+}
+
+size_t CodeGen::eq(size_t i, size_t j)
+{
+        return cmp(i, j, "sete");
+}
+
+size_t CodeGen::ne(size_t i, size_t j)
+{
+        return cmp(i, j, "setne");
+}
+
+size_t CodeGen::lt(size_t i, size_t j)
+{
+        return cmp(i, j, "setl");
+}
+
+size_t CodeGen::gt(size_t i, size_t j)
+{
+        return cmp(i, j, "setg");
+}
+
+size_t CodeGen::le(size_t i, size_t j)
+{
+        return cmp(i, j, "setle");
+}
+
+size_t CodeGen::ge(size_t i, size_t j)
+{
+        return cmp(i, j, "setge");
 }

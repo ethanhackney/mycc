@@ -12,6 +12,12 @@ enum {
         TOK_MINUS,      // '-'
         TOK_STAR,       // '*'
         TOK_SLASH,      // '/'
+        TOK_EQ,         // '=='
+        TOK_NE,         // '!='
+        TOK_LT,         // '<'
+        TOK_GT,         // '>'
+        TOK_LE,         // '<='
+        TOK_GE,         // '>='
         TOK_INTLIT,     // integer literal
         TOK_EQUALS,     // '='
         TOK_IDENT,      // identifier

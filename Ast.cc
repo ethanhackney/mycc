@@ -14,6 +14,12 @@ static void typeok(int type)
         case AST_IDENT:
         case AST_LVIDENT:
         case AST_ASSIGN:
+        case AST_EQ:
+        case AST_NE:
+        case AST_LT:
+        case AST_GT:
+        case AST_LE:
+        case AST_GE:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -118,6 +124,12 @@ std::string Ast::Name(void) const
                 "AST_IDENT",
                 "AST_LVIDENT",
                 "AST_ASSIGN",
+                "AST_EQ",
+                "AST_NE",
+                "AST_LT",
+                "AST_GT",
+                "AST_LE",
+                "AST_GE",
         };
 
         return names[_type];
