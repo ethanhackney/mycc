@@ -4,10 +4,16 @@ CodeGen::CodeGen(const std::string &path)
         : _path {path},
         _stk {},
         _tab {},
-        _fp {fopen(path.c_str(), "w")}
+        _fp {fopen(path.c_str(), "w")},
+        _id {1}
 {
         if (_fp == nullptr)
                 error("could not open %s", path.c_str());
+}
+
+int CodeGen::getLabel(void)
+{
+        return _id++;
 }
 
 CodeGen::~CodeGen()
@@ -57,15 +63,55 @@ void CodeGen::GenGlo(const std::string &id)
         fprintf(_fp, "\t.comm\t%s,8,8\n", id.c_str());
 }
 
-size_t CodeGen::GenAst(Ast *n, size_t r)
+size_t CodeGen::genIfAst(Ast *n)
+{
+        int falseid;
+        int endid;
+
+        falseid = getLabel();
+        if (n->Right())
+                endid = getLabel();
+
+        GenAst(n->Left(), (size_t)falseid, n->Type());
+        Free();
+
+        GenAst(n->Mid(), (size_t)-1, n->Type());
+        Free();
+
+        if (n->Right())
+                jmp(endid);
+
+        label(falseid);
+
+        if (n->Right()) {
+                GenAst(n->Right(), (size_t)-1, n->Type());
+                Free();
+                label(endid);
+        }
+
+        return (size_t)-1;
+}
+
+size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
 {
         size_t left;
         size_t right;
 
+        switch (n->Type()) {
+        case AST_IF:
+                return genIfAst(n);
+        case AST_GLUE:
+                GenAst(n->Left(), (size_t)-1, n->Type());
+                Free();
+                GenAst(n->Right(), (size_t)-1, n->Type());
+                Free();
+                return (size_t)-1;
+        }
+
         if (n->Left())
-                left = GenAst(n->Left(), (size_t)-1);
+                left = GenAst(n->Left(), (size_t)-1, n->Type());
         if (n->Right())
-                right = GenAst(n->Right(), left);
+                right = GenAst(n->Right(), left, n->Type());
 
         switch (n->Type()) {
         case AST_ADD:
@@ -77,17 +123,14 @@ size_t CodeGen::GenAst(Ast *n, size_t r)
         case AST_DIV:
                 return div(left, right);
         case AST_EQ:
-                return eq(left, right);
         case AST_NE:
-                return ne(left, right);
         case AST_LT:
-                return lt(left, right);
         case AST_GT:
-                return gt(left, right);
         case AST_LE:
-                return le(left, right);
         case AST_GE:
-                return ge(left, right);
+                if (parentop == AST_IF)
+                        return cmp_and_jmp(n->Type(), left, right, r);
+                return cmp_and_set(n->Type(), left, right);
         case AST_INTLIT:
                 return movInt(n->Int());
         case AST_IDENT:
@@ -96,6 +139,10 @@ size_t CodeGen::GenAst(Ast *n, size_t r)
                 return strGlo(r, n->Id());
         case AST_ASSIGN:
                 return right;
+        case AST_PRINT:
+                GenPrintInt(left);
+                Free();
+                return (size_t)-1;
         default:
                 usage("invalid token type: %s", n->Name().c_str());
                 exit(EXIT_FAILURE);
@@ -206,4 +253,64 @@ size_t CodeGen::le(size_t i, size_t j)
 size_t CodeGen::ge(size_t i, size_t j)
 {
         return cmp(i, j, "setge");
+}
+
+void CodeGen::jmp(int label)
+{
+        fprintf(_fp, "\tjmp\tL%d\n", label);
+}
+
+void CodeGen::label(int label)
+{
+        fprintf(_fp, "L%d:\n", label);
+}
+
+size_t CodeGen::cmp_and_jmp(int type, size_t i, size_t j, int label)
+{
+        static const char *jmps[] = {
+                "jne",
+                "je",
+                "jge",
+                "jle",
+                "jg",
+                "jl",
+        };
+
+        if (type < AST_EQ || type > AST_GE) {
+                puts("here");
+                usage("cmp_and_jmp: bad ast type",
+                                Ast{type, 0}.Name().c_str());
+                puts("here");
+        }
+
+        fprintf(_fp, "\tcmpq\t%s, %s\n", _stk.Name(j), _stk.Name(i));
+        fprintf(_fp, "\t%s\tL%d\n", jmps[type - AST_EQ], label);
+        Free();
+        return (size_t)-1;
+}
+
+size_t CodeGen::cmp_and_set(int type, size_t i, size_t j)
+{
+        static const char *sets[] = {
+                "sete",
+                "setne",
+                "setl",
+                "setg",
+                "setle",
+                "setge",
+        };
+        std::string b = std::string{_stk.Name(j)} + "b";
+
+        if (type < AST_EQ || type > AST_GE) {
+                puts("here");
+                usage("cmp_and_set: bad ast type: %s\n",
+                                Ast{type, 0}.Name().c_str());
+                puts("here");
+        }
+
+        fprintf(_fp, "\tcmpq\t%s, %s\n", _stk.Name(j), _stk.Name(i));
+        fprintf(_fp, "\t%s\t%s\n", sets[type - AST_EQ], b.c_str());
+        fprintf(_fp, "\tmovzbq\t%s, %s\n", b.c_str(), _stk.Name(j));
+        _stk.Put(i);
+        return j;
 }

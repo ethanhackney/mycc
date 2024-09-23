@@ -9,11 +9,9 @@ int main(int argc, char **argv)
         CodeGen cg {"out.s"};
         Parser p {l, cg};
 
+        auto n = p.ParseCompound();
         cg.GenPre();
-        for (;;) {
-                p.ParseStmt();
-                if (l.Curr().Type() == TOK_EOF)
-                        break;
-        }
+        cg.GenAst(n, (size_t)0, AST_NONE);
         cg.GenPost();
+        astfree(n);
 }

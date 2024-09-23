@@ -7,26 +7,49 @@ Parser::Parser(Lexer &lex, CodeGen &cg)
         _lex.Next();
 }
 
-void Parser::ParseStmt(void)
+Ast *Parser::ParseCompound(void)
 {
-        switch (_lex.Curr().Type()) {
-        case TOK_PRINT:
-                parse_print();
-                break;
-        case TOK_INT:
-                parse_var_decl();
-                break;
-        case TOK_IDENT:
-                parse_assign();
-                break;
-        case TOK_EOF:
-                return;
-        default:
-                usage("invalid token type: %s", _lex.Curr().Name().c_str());
+        Ast *left {nullptr};
+        Ast *tree;
+
+        _lex.Eat(TOK_LBRACE);
+
+        for (;;) {
+                switch (_lex.Curr().Type()) {
+                case TOK_PRINT:
+                        tree = parsePrint();
+                        break;
+                case TOK_INT:
+                        parseVarDecl();
+                        tree = nullptr;
+                        break;
+                case TOK_IDENT:
+                        tree = parseAssign();
+                        break;
+                case TOK_IF:
+                        tree = parseIf();
+                        break;
+                case TOK_RBRACE:
+                        _lex.Eat(TOK_RBRACE);
+                        return left;
+                default:
+                        usage("invalid token type: %s",
+                                        _lex.Curr().Name().c_str());
+                }
+
+                if (tree == nullptr)
+                        continue;
+
+                if (left == nullptr)
+                        left = tree;
+                else
+                        left = new Ast{AST_GLUE, left, nullptr, tree, 0};
         }
+
+        return tree;
 }
 
-Ast *Parser::parse_primary(void)
+Ast *Parser::parsePrimary(void)
 {
         Sym *s;
         Ast *n;
@@ -78,37 +101,35 @@ static int op_prec(int type)
         return p;
 }
 
-Ast *Parser::parse_expr(int ptp)
+Ast *Parser::parseExpr(int ptp)
 {
-        auto left = parse_primary();
+        auto left = parsePrimary();
         auto tt = _lex.Curr().Type();
-        if (tt == TOK_SEMI)
+        if (tt == TOK_SEMI || tt == TOK_RPAREN)
                 return left;
 
         while (op_prec(tt) > ptp) {
                 _lex.Next();
-                auto right = parse_expr(op_prec(tt));
+                auto right = parseExpr(op_prec(tt));
                 left = new Ast{tok2ast(tt), left, right, 0};
                 tt = _lex.Curr().Type();
-                if (tt == TOK_SEMI)
+                if (tt == TOK_SEMI || tt == TOK_RPAREN)
                         return left;
         }
 
         return left;
 }
 
-void Parser::parse_print(void)
+Ast *Parser::parsePrint(void)
 {
         _lex.Eat(TOK_PRINT);
-        auto n = parse_expr(0);
-        auto reg = _cg.GenAst(n, (size_t)-1);
-        _cg.GenPrintInt(reg);
-        _cg.Free();
+        auto expr = parseExpr(0);
+        auto pr = new Ast{AST_PRINT, expr, 0};
         _lex.Eat(TOK_SEMI);
-        astfree(n);
+        return pr;
 }
 
-void Parser::parse_var_decl(void)
+void Parser::parseVarDecl(void)
 {
         _lex.Eat(TOK_INT);
         auto id = _lex.Curr().Lex();
@@ -118,17 +139,32 @@ void Parser::parse_var_decl(void)
         _lex.Eat(TOK_SEMI);
 }
 
-void Parser::parse_assign(void)
+Ast *Parser::parseAssign(void)
 {
         auto id = _lex.Curr().Lex();
         _lex.Eat(TOK_IDENT);
         auto s = _cg.GetGlo(id);
         auto right = new Ast{AST_LVIDENT, s->Name()};
         _lex.Eat(TOK_EQUALS);
-        auto left = parse_expr(0);
-        auto root = new Ast{AST_ASSIGN, left, right, 0};
-        _cg.GenAst(root, (size_t)-1);
-        _cg.Free();
+        auto left = parseExpr(0);
+        auto tree = new Ast{AST_ASSIGN, left, right, 0};
         _lex.Eat(TOK_SEMI);
-        astfree(root);
+        return tree;
+}
+
+Ast *Parser::parseIf(void)
+{
+        _lex.Eat(TOK_IF);
+        _lex.Eat(TOK_LPAREN);
+        auto cond = parseExpr(0);
+        if (cond->Type() < AST_EQ || cond->Type() > AST_GE)
+                usage("parseIf: invalid comparison operator");
+        _lex.Eat(TOK_RPAREN);
+        auto truetree = ParseCompound();
+        Ast *falsetree {nullptr};
+        if (_lex.Curr().Type() == TOK_ELSE) {
+                _lex.Eat(TOK_ELSE);
+                falsetree = ParseCompound();
+        }
+        return new Ast{AST_IF, cond, truetree, falsetree, 0};
 }

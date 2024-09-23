@@ -19,11 +19,17 @@ enum {
         TOK_LE,         // '<='
         TOK_GE,         // '>='
         TOK_INTLIT,     // integer literal
+        TOK_SEMI,       // ';'
         TOK_EQUALS,     // '='
         TOK_IDENT,      // identifier
+        TOK_LBRACE,     // '{'
+        TOK_RBRACE,     // '}'
+        TOK_LPAREN,     // '('
+        TOK_RPAREN,     // ')'
         TOK_PRINT,      // 'print'
         TOK_INT,        // 'int'
-        TOK_SEMI,       // ';'
+        TOK_IF,         // 'if'
+        TOK_ELSE,       // 'else'
 };
 
 // token

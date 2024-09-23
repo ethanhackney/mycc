@@ -15,6 +15,7 @@ private:
         RegStk          _stk;   // register stack
         SymTab          _tab;   // symbol table
         FILE            *_fp;   // output file
+        int             _id;    // id of next available label
 
         // generate instructions for global variable
         void genGlo(const std::string &id);
@@ -46,6 +47,18 @@ private:
         size_t le(size_t i, size_t j);
         // generate instructions for greater than or equal test
         size_t ge(size_t i, size_t j);
+        // generate instructions for if statement
+        size_t genIfAst(Ast *n);
+        // get a new label
+        int getLabel(void);
+        // generate jump instruction
+        void jmp(int label);
+        // generate label instruction
+        void label(int label);
+        // generate compare and jump
+        size_t cmp_and_jmp(int type, size_t i, size_t j, int label);
+        // generate compare and set
+        size_t cmp_and_set(int type, size_t i, size_t j);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);
@@ -62,7 +75,7 @@ public:
         void GenPrintInt(size_t r);
 
         // generate code for AST
-        size_t GenAst(Ast *n, size_t r);
+        size_t GenAst(Ast *n, size_t r, int parentop);
 
         // generate code for global variable
         void GenGlo(const std::string &id);

@@ -97,6 +97,14 @@ Token Lexer::Next(void)
                         return _curr = Token{TOK_GT, ">"};
                 case ';':
                         return _curr = Token{TOK_SEMI, ";"};
+                case '{':
+                        return _curr = Token{TOK_LBRACE, "{"};
+                case '}':
+                        return _curr = Token{TOK_RBRACE, "}"};
+                case '(':
+                        return _curr = Token{TOK_LPAREN, "("};
+                case ')':
+                        return _curr = Token{TOK_RPAREN, ")"};
                 }
 
                 if (isdigit(c)) {
@@ -109,6 +117,10 @@ Token Lexer::Next(void)
                                 return _curr = Token{TOK_PRINT, w};
                         if (w == "int")
                                 return _curr = Token{TOK_INT, w};
+                        if (w == "if")
+                                return _curr = Token{TOK_IF, w};
+                        if (w == "else")
+                                return _curr = Token{TOK_ELSE, w};
 
                         return _curr = Token{TOK_IDENT, w};
                 } else {

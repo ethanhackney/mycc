@@ -20,6 +20,9 @@ static void typeok(int type)
         case AST_GT:
         case AST_LE:
         case AST_GE:
+        case AST_PRINT:
+        case AST_GLUE:
+        case AST_IF:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -29,6 +32,7 @@ static void typeok(int type)
 Ast::Ast(void)
         : _left {nullptr},
         _right {nullptr},
+        _mid {nullptr},
         _type {AST_NONE}
 {}
 
@@ -36,6 +40,7 @@ Ast::Ast(void)
 Ast::Ast(int type, Ast *left, Ast *right, int intlit)
         : _left {left},
         _right {right},
+        _mid {nullptr},
         _type {type},
         _intlit {intlit}
 {
@@ -46,6 +51,7 @@ Ast::Ast(int type, Ast *left, Ast *right, const std::string &id)
         : _id {id},
         _left {left},
         _right {right},
+        _mid {nullptr},
         _type {type}
 {
         typeok(_type);
@@ -54,6 +60,7 @@ Ast::Ast(int type, Ast *left, Ast *right, const std::string &id)
 Ast::Ast(int type, int intlit)
         : _left {nullptr},
         _right {nullptr},
+        _mid {nullptr},
         _type {type},
         _intlit {intlit}
 {
@@ -64,6 +71,7 @@ Ast::Ast(int type, const std::string &id)
         : _id {id},
         _left {nullptr},
         _right {nullptr},
+        _mid {nullptr},
         _type {type}
 {
         typeok(_type);
@@ -72,6 +80,7 @@ Ast::Ast(int type, const std::string &id)
 Ast::Ast(int type, Ast *left, int intlit)
         : _left {left},
         _right {nullptr},
+        _mid {nullptr},
         _type {type},
         _intlit {intlit}
 {
@@ -82,6 +91,7 @@ Ast::Ast(int type, Ast *left, const std::string &id)
         : _id {id},
         _left {left},
         _right {nullptr},
+        _mid {nullptr},
         _type {type}
 {
         typeok(_type);
@@ -130,6 +140,9 @@ std::string Ast::Name(void) const
                 "AST_GT",
                 "AST_LE",
                 "AST_GE",
+                "AST_PRINT",
+                "AST_GLUE",
+                "AST_IF",
         };
 
         return names[_type];
@@ -140,6 +153,22 @@ void astfree(Ast *n)
         if (n == nullptr)
                 return;
         astfree(n->Left());
+        astfree(n->Mid());
         astfree(n->Right());
         delete n;
+}
+
+Ast::Ast(int type, Ast *left, Ast *mid, Ast *right, int intlit)
+        : _left {left},
+        _right {right},
+        _mid {mid},
+        _type {type},
+        _intlit {intlit}
+{
+        typeok(_type);
+}
+
+Ast *Ast::Mid(void) const
+{
+        return _mid;
 }

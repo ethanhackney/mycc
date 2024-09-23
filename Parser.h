@@ -13,22 +13,24 @@ private:
         Lexer   &_lex;  // reference to lexical analyzer
 
         // parse a print statement
-        void parse_print(void);
+        Ast *parsePrint(void);
         // parse a variable declaration statement
-        void parse_var_decl(void);
+        void parseVarDecl(void);
         // parse assignment statement
-        void parse_assign(void);
+        Ast *parseAssign(void);
         // parse expression
-        Ast *parse_expr(int ptp);
+        Ast *parseExpr(int ptp);
         // parse primary
-        Ast *parse_primary(void);
+        Ast *parsePrimary(void);
+        // parse if statement
+        Ast *parseIf(void);
 public:
         // @lex:        reference to lexical analyzer
         // @cg:         reference to code generator
         Parser(Lexer &lex, CodeGen &cg);
 
-        // parse a statement
-        void ParseStmt(void);
+        // parse a compound statement
+        Ast *ParseCompound(void);
 };
 
 #endif

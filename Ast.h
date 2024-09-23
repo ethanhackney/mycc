@@ -22,6 +22,9 @@ enum {
         AST_IDENT,      // identifier
         AST_LVIDENT,    // l-value identifier
         AST_ASSIGN,     // assignment
+        AST_PRINT,      // print statement
+        AST_GLUE,       // glue node
+        AST_IF,         // if statement
 };
 
 // abstract syntax tree
@@ -30,11 +33,19 @@ private:
         std::string     _id;            // identifier value
         Ast             *_left;         // left child
         Ast             *_right;        // right child
+        Ast             *_mid;          // middle child
         int             _type;          // ast type
         int             _intlit;        // integer literal value
 public:
         // default constructor
         Ast(void);
+
+        // @type:       ast type
+        // @left:       left child
+        // @mid         middle child
+        // @right:      right child
+        // @intlit:     integer value
+        Ast(int type, Ast *left, Ast *mid, Ast *right, int intlit);
 
         // @type        ast type
         // @left:       left child
@@ -71,6 +82,9 @@ public:
 
         // get right child
         Ast *Right(void) const;
+
+        // get middle child
+        Ast *Mid(void) const;
 
         // get integer value
         int Int(void) const;
