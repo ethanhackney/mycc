@@ -23,6 +23,7 @@ static void typeok(int type)
         case AST_PRINT:
         case AST_GLUE:
         case AST_IF:
+        case AST_WHILE:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -143,6 +144,7 @@ std::string Ast::Name(void) const
                 "AST_PRINT",
                 "AST_GLUE",
                 "AST_IF",
+                "AST_WHILE",
         };
 
         return names[_type];

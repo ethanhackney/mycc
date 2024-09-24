@@ -25,6 +25,7 @@ enum {
         AST_PRINT,      // print statement
         AST_GLUE,       // glue node
         AST_IF,         // if statement
+        AST_WHILE,      // while statement
 };
 
 // abstract syntax tree

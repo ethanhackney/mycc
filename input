@@ -1,11 +1,10 @@
-int x;
+{
+        int i;
 
-x = 7 < 9;      print x;
-x = 7 <= 9;     print x;
-x = 7 != 9;     print x;
-x = 7 == 7;     print x;
-x = 7 >= 7;     print x;
-x = 7 <= 7;     print x;
-x = 9 > 7;      print x;
-x = 9 >= 7;     print x;
-x = 9 != 7;     print x;
+        i = 0;
+        while (i < 10) {
+                i = i + 1;
+        }
+
+        print i;
+}

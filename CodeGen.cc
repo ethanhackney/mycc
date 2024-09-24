@@ -100,6 +100,8 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         switch (n->Type()) {
         case AST_IF:
                 return genIfAst(n);
+        case AST_WHILE:
+                return genWhile(n);
         case AST_GLUE:
                 GenAst(n->Left(), (size_t)-1, n->Type());
                 Free();
@@ -128,7 +130,7 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         case AST_GT:
         case AST_LE:
         case AST_GE:
-                if (parentop == AST_IF)
+                if (parentop == AST_IF || parentop == AST_WHILE)
                         return cmp_and_jmp(n->Type(), left, right, r);
                 return cmp_and_set(n->Type(), left, right);
         case AST_INTLIT:
@@ -260,9 +262,9 @@ void CodeGen::jmp(int label)
         fprintf(_fp, "\tjmp\tL%d\n", label);
 }
 
-void CodeGen::label(int label)
+void CodeGen::label(int l)
 {
-        fprintf(_fp, "L%d:\n", label);
+        fprintf(_fp, "L%d:\n", l);
 }
 
 size_t CodeGen::cmp_and_jmp(int type, size_t i, size_t j, int label)
@@ -313,4 +315,18 @@ size_t CodeGen::cmp_and_set(int type, size_t i, size_t j)
         fprintf(_fp, "\tmovzbq\t%s, %s\n", b.c_str(), _stk.Name(j));
         _stk.Put(i);
         return j;
+}
+
+size_t CodeGen::genWhile(Ast *n)
+{
+        auto start = getLabel();
+        auto end = getLabel();
+        label(start);
+        GenAst(n->Left(), end, n->Type());
+        Free();
+        GenAst(n->Right(), (size_t)-1, n->Type());
+        Free();
+        jmp(start);
+        label(end);
+        return (size_t)-1;
 }

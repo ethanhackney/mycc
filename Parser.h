@@ -24,6 +24,8 @@ private:
         Ast *parsePrimary(void);
         // parse if statement
         Ast *parseIf(void);
+        // parse while statement
+        Ast *parseWhile(void);
 public:
         // @lex:        reference to lexical analyzer
         // @cg:         reference to code generator

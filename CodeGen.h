@@ -59,6 +59,8 @@ private:
         size_t cmp_and_jmp(int type, size_t i, size_t j, int label);
         // generate compare and set
         size_t cmp_and_set(int type, size_t i, size_t j);
+        // generate code for while statement
+        size_t genWhile(Ast *n);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);

@@ -28,6 +28,8 @@ Ast *Parser::ParseCompound(void)
                         break;
                 case TOK_IF:
                         tree = parseIf();
+                case TOK_WHILE:
+                        tree = parseWhile();
                         break;
                 case TOK_RBRACE:
                         _lex.Eat(TOK_RBRACE);
@@ -167,4 +169,16 @@ Ast *Parser::parseIf(void)
                 falsetree = ParseCompound();
         }
         return new Ast{AST_IF, cond, truetree, falsetree, 0};
+}
+
+Ast *Parser::parseWhile(void)
+{
+        _lex.Eat(TOK_WHILE);
+        _lex.Eat(TOK_LPAREN);
+        auto cond = parseExpr(0);
+        if (cond->Type() < AST_EQ || cond->Type() > AST_GE)
+                usage("invalid comparison op: %s", cond->Name().c_str());
+        _lex.Eat(TOK_RPAREN);
+        auto body = ParseCompound();
+        return new Ast{AST_WHILE, cond, nullptr, body, 0};
 }

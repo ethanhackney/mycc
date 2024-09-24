@@ -30,6 +30,7 @@ enum {
         TOK_INT,        // 'int'
         TOK_IF,         // 'if'
         TOK_ELSE,       // 'else'
+        TOK_WHILE,      // 'while'
 };
 
 // token
