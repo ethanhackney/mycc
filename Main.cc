@@ -5,7 +5,12 @@
 
 int main(int argc, char **argv)
 {
-        Lexer l {"input"};
+        if (argc != 2) {
+                fprintf(stderr, "a.out input\n");
+                exit(1);
+        }
+
+        Lexer l {argv[1]};
         CodeGen cg {"out.s"};
         Parser p {l, cg};
 

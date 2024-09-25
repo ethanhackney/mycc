@@ -15,29 +15,11 @@ Ast *Parser::ParseCompound(void)
         _lex.Eat(TOK_LBRACE);
 
         for (;;) {
-                switch (_lex.Curr().Type()) {
-                case TOK_PRINT:
-                        tree = parsePrint();
-                        break;
-                case TOK_INT:
-                        parseVarDecl();
-                        tree = nullptr;
-                        break;
-                case TOK_IDENT:
-                        tree = parseAssign();
-                        break;
-                case TOK_IF:
-                        tree = parseIf();
-                case TOK_WHILE:
-                        tree = parseWhile();
-                        break;
-                case TOK_RBRACE:
-                        _lex.Eat(TOK_RBRACE);
-                        return left;
-                default:
-                        usage("invalid token type: %s",
-                                        _lex.Curr().Name().c_str());
-                }
+                tree = parseSingle();
+
+                if (tree != nullptr && (tree->Type() == AST_PRINT ||
+                                        tree->Type() == AST_ASSIGN))
+                        _lex.Eat(TOK_SEMI);
 
                 if (tree == nullptr)
                         continue;
@@ -46,6 +28,11 @@ Ast *Parser::ParseCompound(void)
                         left = tree;
                 else
                         left = new Ast{AST_GLUE, left, nullptr, tree, 0};
+
+                if (_lex.Curr().Type() == TOK_RBRACE) {
+                        _lex.Eat(TOK_RBRACE);
+                        return left;
+                }
         }
 
         return tree;
@@ -127,7 +114,6 @@ Ast *Parser::parsePrint(void)
         _lex.Eat(TOK_PRINT);
         auto expr = parseExpr(0);
         auto pr = new Ast{AST_PRINT, expr, 0};
-        _lex.Eat(TOK_SEMI);
         return pr;
 }
 
@@ -150,7 +136,6 @@ Ast *Parser::parseAssign(void)
         _lex.Eat(TOK_EQUALS);
         auto left = parseExpr(0);
         auto tree = new Ast{AST_ASSIGN, left, right, 0};
-        _lex.Eat(TOK_SEMI);
         return tree;
 }
 
@@ -181,4 +166,44 @@ Ast *Parser::parseWhile(void)
         _lex.Eat(TOK_RPAREN);
         auto body = ParseCompound();
         return new Ast{AST_WHILE, cond, nullptr, body, 0};
+}
+
+Ast *Parser::parseFor(void)
+{
+        _lex.Eat(TOK_FOR);
+        _lex.Eat(TOK_LPAREN);
+        auto pre = parseSingle();
+        _lex.Eat(TOK_SEMI);
+        auto cond = parseExpr(0);
+        if (cond->Type() < AST_EQ || cond->Type() > AST_GE)
+                usage("bad comparison operator: %s", cond->Name().c_str());
+        _lex.Eat(TOK_SEMI);
+        auto post = parseSingle();
+        _lex.Eat(TOK_RPAREN);
+        auto body = ParseCompound();
+        auto tree = new Ast{AST_GLUE, body, nullptr, post, 0};
+        tree = new Ast{AST_WHILE, cond, nullptr, tree, 0};
+        return new Ast{AST_GLUE, pre, nullptr, tree, 0};
+}
+
+Ast *Parser::parseSingle(void)
+{
+        switch (_lex.Curr().Type()) {
+        case TOK_PRINT:
+                return parsePrint();
+        case TOK_INT:
+                parseVarDecl();
+                return nullptr;
+        case TOK_IDENT:
+                return parseAssign();
+        case TOK_IF:
+                return parseIf();
+        case TOK_WHILE:
+                return parseWhile();
+        case TOK_FOR:
+                return parseFor();
+        default:
+                usage("bad token: %s", _lex.Curr().Name().c_str());
+                exit(1);
+        }
 }

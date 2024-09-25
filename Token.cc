@@ -34,6 +34,7 @@ Token::Token(int type, const std::string &lex)
         case TOK_IF:
         case TOK_ELSE:
         case TOK_WHILE:
+        case TOK_FOR:
                 break;
         default:
                 usage("bad token type: %d", _type);
@@ -78,6 +79,7 @@ std::string Token::Name(void) const
                 "TOK_IF",
                 "TOK_ELSE",
                 "TOK_WHILE",
+                "TOK_FOR",
         };
         return names[_type];
 }

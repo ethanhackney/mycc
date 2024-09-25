@@ -123,6 +123,8 @@ Token Lexer::Next(void)
                                 return _curr = Token{TOK_ELSE, w};
                         if (w == "while")
                                 return _curr = Token{TOK_WHILE, w};
+                        if (w == "for")
+                                return _curr = Token{TOK_FOR, w};
 
                         return _curr = Token{TOK_IDENT, w};
                 } else {
