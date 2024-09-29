@@ -26,6 +26,7 @@ enum {
         AST_GLUE,       // glue node
         AST_IF,         // if statement
         AST_WHILE,      // while statement
+        AST_FUNC,       // function
 };
 
 // abstract syntax tree

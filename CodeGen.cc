@@ -37,13 +37,10 @@ void CodeGen::GenPre(void)
 	      "\tleaq	.LC0(%rip), %rdi\n"
 	      "\tmovl	$0, %eax\n"
 	      "\tcall	printf@PLT\n"
-	      "\tnop\n"
-	      "\tleave\n"
-	      "\tret\n"
-	      "\n"
-	      "\t.globl\tmain\n"
-	      "\t.type\tmain, @function\n"
-	      "main:\n" "\tpushq\t%rbp\n" "\tmovq	%rsp, %rbp\n", _fp);
+              "\tnop\n"
+              "\tleave\n"
+              "\tret\n"
+              "\n", _fp);
 }
 
 void CodeGen::GenPost(void)
@@ -75,7 +72,7 @@ size_t CodeGen::genIfAst(Ast *n)
         GenAst(n->Left(), (size_t)falseid, n->Type());
         Free();
 
-        GenAst(n->Mid(), (size_t)-1, n->Type());
+        GenAst(n->Mid(), NIL_REG, n->Type());
         Free();
 
         if (n->Right())
@@ -84,12 +81,12 @@ size_t CodeGen::genIfAst(Ast *n)
         label(falseid);
 
         if (n->Right()) {
-                GenAst(n->Right(), (size_t)-1, n->Type());
+                GenAst(n->Right(), NIL_REG, n->Type());
                 Free();
                 label(endid);
         }
 
-        return (size_t)-1;
+        return NIL_REG;
 }
 
 size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
@@ -103,15 +100,20 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         case AST_WHILE:
                 return genWhile(n);
         case AST_GLUE:
-                GenAst(n->Left(), (size_t)-1, n->Type());
+                GenAst(n->Left(), NIL_REG, n->Type());
                 Free();
-                GenAst(n->Right(), (size_t)-1, n->Type());
+                GenAst(n->Right(), NIL_REG, n->Type());
                 Free();
-                return (size_t)-1;
+                return NIL_REG;
+        case AST_FUNC:
+                funcPre(n->Id());
+                GenAst(n->Left(), NIL_REG, n->Type());
+                funcPost();
+                return NIL_REG;
         }
 
         if (n->Left())
-                left = GenAst(n->Left(), (size_t)-1, n->Type());
+                left = GenAst(n->Left(), NIL_REG, n->Type());
         if (n->Right())
                 right = GenAst(n->Right(), left, n->Type());
 
@@ -144,7 +146,7 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         case AST_PRINT:
                 GenPrintInt(left);
                 Free();
-                return (size_t)-1;
+                return NIL_REG;
         default:
                 usage("invalid token type: %s", n->Name().c_str());
                 exit(EXIT_FAILURE);
@@ -288,7 +290,7 @@ size_t CodeGen::cmp_and_jmp(int type, size_t i, size_t j, int label)
         fprintf(_fp, "\tcmpq\t%s, %s\n", _stk.Name(j), _stk.Name(i));
         fprintf(_fp, "\t%s\tL%d\n", jmps[type - AST_EQ], label);
         Free();
-        return (size_t)-1;
+        return NIL_REG;
 }
 
 size_t CodeGen::cmp_and_set(int type, size_t i, size_t j)
@@ -324,9 +326,29 @@ size_t CodeGen::genWhile(Ast *n)
         label(start);
         GenAst(n->Left(), end, n->Type());
         Free();
-        GenAst(n->Right(), (size_t)-1, n->Type());
+        GenAst(n->Right(), NIL_REG, n->Type());
         Free();
         jmp(start);
         label(end);
-        return (size_t)-1;
+        return NIL_REG;
+}
+
+void CodeGen::funcPre(const std::string &id)
+{
+        fprintf(_fp,
+                "\t.text\n"
+                "\t.globl\t%s\n"
+                "\t.type\t%s, @function\n"
+                "%s:\n"
+                "\tpushq\t%%rbp\n"
+                "\tmovq\t%%rsp, %%rbp\n",
+                id.c_str(),
+                id.c_str(),
+                id.c_str());
+}
+
+void
+CodeGen::funcPost(void)
+{
+        GenPost();
 }

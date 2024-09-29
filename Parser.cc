@@ -207,3 +207,15 @@ Ast *Parser::parseSingle(void)
                 exit(1);
         }
 }
+
+Ast *Parser::ParseFuncDecl(void)
+{
+        _lex.Eat(TOK_VOID);
+        auto id = _lex.Curr().Lex();
+        _lex.Eat(TOK_IDENT);
+        _cg.SetGlo(id);
+        _lex.Eat(TOK_LPAREN);
+        _lex.Eat(TOK_RPAREN);
+        auto n = ParseCompound();
+        return new Ast{AST_FUNC, n, id};
+}

@@ -125,6 +125,8 @@ Token Lexer::Next(void)
                                 return _curr = Token{TOK_WHILE, w};
                         if (w == "for")
                                 return _curr = Token{TOK_FOR, w};
+                        if (w == "void")
+                                return _curr = Token{TOK_VOID, w};
 
                         return _curr = Token{TOK_IDENT, w};
                 } else {

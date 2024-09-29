@@ -14,9 +14,12 @@ int main(int argc, char **argv)
         CodeGen cg {"out.s"};
         Parser p {l, cg};
 
-        auto n = p.ParseCompound();
         cg.GenPre();
-        cg.GenAst(n, (size_t)0, AST_NONE);
-        cg.GenPost();
-        astfree(n);
+        for (;;) {
+                auto n = p.ParseFuncDecl();
+                cg.GenAst(n, NIL_REG, AST_NONE);
+                astfree(n);
+                if (l.Curr().Type() == TOK_EOF)
+                        break;
+        }
 }

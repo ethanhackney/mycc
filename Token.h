@@ -32,6 +32,7 @@ enum {
         TOK_ELSE,       // 'else'
         TOK_WHILE,      // 'while'
         TOK_FOR,        // 'for'
+        TOK_VOID,       // 'void'
 };
 
 // token

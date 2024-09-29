@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <string>
 
+#define NIL_REG (size_t)-1
+
 // code generator
 class CodeGen {
 private:
@@ -61,6 +63,10 @@ private:
         size_t cmp_and_set(int type, size_t i, size_t j);
         // generate code for while statement
         size_t genWhile(Ast *n);
+        // generate function preamble
+        void funcPre(const std::string &id);
+        // generate function postamble
+        void funcPost(void);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);

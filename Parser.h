@@ -37,6 +37,9 @@ public:
 
         // parse a compound statement
         Ast *ParseCompound(void);
+
+        // parse a function declaration
+        Ast *ParseFuncDecl(void);
 };
 
 #endif
