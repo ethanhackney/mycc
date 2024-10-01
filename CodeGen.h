@@ -7,6 +7,7 @@
 #include "SymTab.h"
 #include <cstdio>
 #include <string>
+#include "Type.h"
 
 #define NIL_REG (size_t)-1
 
@@ -67,6 +68,8 @@ private:
         void funcPre(const std::string &id);
         // generate function postamble
         void funcPost(void);
+        // widen a data type
+        size_t widen(size_t r, int oldtype, int newtype);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);
@@ -95,7 +98,7 @@ public:
         void Free(void);
 
         // get symbol
-        void SetGlo(const std::string &id);
+        void SetGlo(int prim, int stype, const std::string &id);
 };
 
 #endif

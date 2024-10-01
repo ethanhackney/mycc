@@ -5,6 +5,7 @@
 #include "CodeGen.h"
 #include "Error.h"
 #include "Lexer.h"
+#include "Type.h"
 
 // parser
 class Parser {

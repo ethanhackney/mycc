@@ -33,6 +33,7 @@ enum {
         TOK_WHILE,      // 'while'
         TOK_FOR,        // 'for'
         TOK_VOID,       // 'void'
+        TOK_CHAR,       // 'char'
 };
 
 // token

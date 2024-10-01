@@ -24,10 +24,12 @@ Ast *Parser::ParseCompound(void)
                 if (tree == nullptr)
                         continue;
 
-                if (left == nullptr)
+                if (left == nullptr) {
                         left = tree;
-                else
-                        left = new Ast{AST_GLUE, left, nullptr, tree, 0};
+                } else {
+                        left = new Ast{AST_GLUE, TYPE_NONE,
+                                left, nullptr, tree, 0};
+                }
 
                 if (_lex.Curr().Type() == TOK_RBRACE) {
                         _lex.Eat(TOK_RBRACE);
@@ -42,14 +44,19 @@ Ast *Parser::parsePrimary(void)
 {
         Sym *s;
         Ast *n;
+        int i;
 
         switch (_lex.Curr().Type()) {
         case TOK_INTLIT:
-                n = new Ast{AST_INTLIT, atoi(_lex.Curr().Lex().c_str())};
+                i = atoi(_lex.Curr().Lex().c_str());
+                if (i >= 0 && i < 256)
+                        n = new Ast{AST_INTLIT, TYPE_CHAR, i};
+                else
+                        n = new Ast{AST_INTLIT, TYPE_INT, i};
                 break;
         case TOK_IDENT:
                 s = _cg.GetGlo(_lex.Curr().Lex());
-                n = new Ast{AST_IDENT, s->Name()};
+                n = new Ast{AST_IDENT, s->Prim(), s->Name()};
                 break;
         default:
                 usage("invalid primary: %s", _lex.Curr().Name().c_str());
@@ -100,7 +107,21 @@ Ast *Parser::parseExpr(int ptp)
         while (op_prec(tt) > ptp) {
                 _lex.Next();
                 auto right = parseExpr(op_prec(tt));
-                left = new Ast{tok2ast(tt), left, right, 0};
+
+                auto lefttype = left->Dtype();
+                auto righttype = right->Dtype();
+                if (!type_compat(&lefttype, &righttype, 0)) {
+                        usage("incompatible types %s and %s",
+                                        type_name(lefttype).c_str(),
+                                        type_name(righttype).c_str());
+                }
+
+                if (lefttype)
+                        left = new Ast{lefttype, right->Dtype(), left, 0};
+                if (righttype)
+                        right = new Ast{righttype, left->Dtype(), right, 0};
+
+                left = new Ast{tok2ast(tt), left->Dtype(), left, right, 0};
                 tt = _lex.Curr().Type();
                 if (tt == TOK_SEMI || tt == TOK_RPAREN)
                         return left;
@@ -113,16 +134,42 @@ Ast *Parser::parsePrint(void)
 {
         _lex.Eat(TOK_PRINT);
         auto expr = parseExpr(0);
-        auto pr = new Ast{AST_PRINT, expr, 0};
-        return pr;
+
+        int lefttype = TYPE_INT;
+        auto righttype = expr->Dtype();
+        if (!type_compat(&lefttype, &righttype, 0)) {
+                usage("type %s not compatible with %s",
+                                type_name(lefttype).c_str(),
+                                type_name(righttype).c_str());
+        }
+
+        if (righttype)
+                expr = new Ast{righttype, TYPE_INT, expr, 0};
+
+        expr = new Ast{AST_PRINT, TYPE_NONE, expr, 0};
+        return expr;
 }
 
 void Parser::parseVarDecl(void)
 {
-        _lex.Eat(TOK_INT);
+        int type;
+
+        switch (_lex.Curr().Type()) {
+        case TOK_CHAR:
+                type = TYPE_CHAR;
+                break;
+        case TOK_INT:
+                type = TYPE_INT;
+                break;
+        case TOK_VOID:
+                type = TYPE_VOID;
+                break;
+        }
+        _lex.Eat(_lex.Curr().Type());
+
         auto id = _lex.Curr().Lex();
         _lex.Eat(TOK_IDENT);
-        _cg.SetGlo(id);
+        _cg.SetGlo(type, STYPE_VAR, id);
         _cg.GenGlo(id);
         _lex.Eat(TOK_SEMI);
 }
@@ -130,12 +177,27 @@ void Parser::parseVarDecl(void)
 Ast *Parser::parseAssign(void)
 {
         auto id = _lex.Curr().Lex();
+
         _lex.Eat(TOK_IDENT);
+
         auto s = _cg.GetGlo(id);
-        auto right = new Ast{AST_LVIDENT, s->Name()};
+        auto right = new Ast{AST_LVIDENT, s->Prim(), s->Name()};
         _lex.Eat(TOK_EQUALS);
+
         auto left = parseExpr(0);
-        auto tree = new Ast{AST_ASSIGN, left, right, 0};
+
+        auto lefttype = left->Dtype();
+        auto righttype = right->Dtype();
+        if (!type_compat(&lefttype, &righttype, 1)) {
+                usage("incompatible types %s and %s",
+                                type_name(lefttype).c_str(),
+                                type_name(righttype).c_str());
+        }
+
+        if (lefttype)
+                left = new Ast{lefttype, right->Dtype(), left, 0};
+
+        auto tree = new Ast{AST_ASSIGN, TYPE_INT, left, right, 0};
         return tree;
 }
 
@@ -153,7 +215,7 @@ Ast *Parser::parseIf(void)
                 _lex.Eat(TOK_ELSE);
                 falsetree = ParseCompound();
         }
-        return new Ast{AST_IF, cond, truetree, falsetree, 0};
+        return new Ast{AST_IF, TYPE_NONE, cond, truetree, falsetree, 0};
 }
 
 Ast *Parser::parseWhile(void)
@@ -165,7 +227,7 @@ Ast *Parser::parseWhile(void)
                 usage("invalid comparison op: %s", cond->Name().c_str());
         _lex.Eat(TOK_RPAREN);
         auto body = ParseCompound();
-        return new Ast{AST_WHILE, cond, nullptr, body, 0};
+        return new Ast{AST_WHILE, TYPE_NONE, cond, nullptr, body, 0};
 }
 
 Ast *Parser::parseFor(void)
@@ -181,9 +243,9 @@ Ast *Parser::parseFor(void)
         auto post = parseSingle();
         _lex.Eat(TOK_RPAREN);
         auto body = ParseCompound();
-        auto tree = new Ast{AST_GLUE, body, nullptr, post, 0};
-        tree = new Ast{AST_WHILE, cond, nullptr, tree, 0};
-        return new Ast{AST_GLUE, pre, nullptr, tree, 0};
+        auto tree = new Ast{AST_GLUE, TYPE_NONE, body, nullptr, post, 0};
+        tree = new Ast{AST_WHILE, TYPE_NONE, cond, nullptr, tree, 0};
+        return new Ast{AST_GLUE, TYPE_NONE, pre, nullptr, tree, 0};
 }
 
 Ast *Parser::parseSingle(void)
@@ -191,6 +253,7 @@ Ast *Parser::parseSingle(void)
         switch (_lex.Curr().Type()) {
         case TOK_PRINT:
                 return parsePrint();
+        case TOK_CHAR:
         case TOK_INT:
                 parseVarDecl();
                 return nullptr;
@@ -213,9 +276,9 @@ Ast *Parser::ParseFuncDecl(void)
         _lex.Eat(TOK_VOID);
         auto id = _lex.Curr().Lex();
         _lex.Eat(TOK_IDENT);
-        _cg.SetGlo(id);
+        _cg.SetGlo(TYPE_VOID, STYPE_FUNC, id);
         _lex.Eat(TOK_LPAREN);
         _lex.Eat(TOK_RPAREN);
         auto n = ParseCompound();
-        return new Ast{AST_FUNC, n, id};
+        return new Ast{AST_FUNC, TYPE_NONE, n, id};
 }

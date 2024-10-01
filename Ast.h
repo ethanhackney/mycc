@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "Error.h"
+#include "Type.h"
 #include <string>
 #include <vector>
 
@@ -27,6 +28,7 @@ enum {
         AST_IF,         // if statement
         AST_WHILE,      // while statement
         AST_FUNC,       // function
+        AST_WIDEN,      // widen data type
 };
 
 // abstract syntax tree
@@ -38,46 +40,54 @@ private:
         Ast             *_mid;          // middle child
         int             _type;          // ast type
         int             _intlit;        // integer literal value
+        int             _dtype;         // data type of expression
 public:
         // default constructor
         Ast(void);
 
         // @type:       ast type
+        // @dtype:      data type of expression
         // @left:       left child
         // @mid         middle child
         // @right:      right child
         // @intlit:     integer value
-        Ast(int type, Ast *left, Ast *mid, Ast *right, int intlit);
+        Ast(int type, int dtype, Ast *left, Ast *mid, Ast *right, int intlit);
 
         // @type        ast type
+        // @dtype:      data type of expression
         // @left:       left child
         // @right:      right child
         // @intlit:     integer literal
-        Ast(int type, Ast *left, Ast *right, int intlit);
+        Ast(int type, int dtype, Ast *left, Ast *right, int intlit);
 
         // @type:       ast type
+        // @dtype:      data type of expression
         // @left:       left child
         // @right:      right child
         // @id:         identifier
-        Ast(int type, Ast *left, Ast *right, const std::string &id);
+        Ast(int type, int dtype, Ast *left, Ast *right, const std::string &id);
 
         // @type:       ast type
+        // @dtype:      data type of expression
         // @intlit:     integer literal
-        Ast(int type, int intlit);
+        Ast(int type, int dtype, int intlit);
 
         // @type:       ast type
+        // @dtype:      data type of expression
         // @id:         identifier
-        Ast(int type, const std::string &id);
+        Ast(int type, int dtype, const std::string &id);
 
         // @type:       ast type
+        // @dtype:      data type of expression
         // @left        left child
         // @intlit:     integer literal
-        Ast(int type, Ast *left, int intlit);
+        Ast(int type, int dtype, Ast *left, int intlit);
 
         // @type:       ast type
+        // @dtype:      data type of expression
         // @left:       left child
         // @id:         identifier
-        Ast(int type, Ast *left, const std::string &id);
+        Ast(int type, int dtype, Ast *left, const std::string &id);
 
         // get left child
         Ast *Left(void) const;
@@ -99,6 +109,8 @@ public:
 
         // get ast type name
         std::string Name(void) const;
+
+        int Dtype(void) const;
 };
 
 // free ast

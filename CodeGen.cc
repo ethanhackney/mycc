@@ -57,7 +57,12 @@ void CodeGen::GenPrintInt(size_t r)
 
 void CodeGen::GenGlo(const std::string &id)
 {
-        fprintf(_fp, "\t.comm\t%s,8,8\n", id.c_str());
+        auto s = _tab.Get(id);
+
+        if (s->Prim() == TYPE_INT)
+                fprintf(_fp, "\t.comm\t%s,8,8\n", id.c_str());
+        else
+                fprintf(_fp, "\t.comm\t%s,1,1\n", id.c_str());
 }
 
 size_t CodeGen::genIfAst(Ast *n)
@@ -147,8 +152,10 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
                 GenPrintInt(left);
                 Free();
                 return NIL_REG;
+        case AST_WIDEN:
+                return widen(left, n->Left()->Dtype(), n->Dtype());
         default:
-                usage("invalid token type: %s", n->Name().c_str());
+                usage("invalid ast type: %s", n->Name().c_str());
                 exit(EXIT_FAILURE);
         }
 }
@@ -194,13 +201,29 @@ size_t CodeGen::movInt(int v)
 size_t CodeGen::movGlo(const std::string &id)
 {
         size_t r = _stk.Get();
-        fprintf(_fp, "\tmovq\t%s(%%rip), %s\n", id.c_str(), _stk.Name(r));
+        auto s = _tab.Get(id);
+
+        if (s->Prim() == TYPE_INT)
+                fprintf(_fp, "\tmovq\t%s(%%rip), %s\n", id.c_str(), _stk.Name(r));
+        else
+                fprintf(_fp, "\tmovzbq\t%s(%%rip), %s\n", id.c_str(), _stk.Name(r));
+
         return r;
 }
 
 size_t CodeGen::strGlo(size_t r, const std::string &id)
 {
-        fprintf(_fp, "\tmovq\t%s, %s(%%rip)\n", _stk.Name(r), id.c_str());
+        auto s = _tab.Get(id);
+
+        if (s->Prim() == TYPE_INT) {
+                fprintf(_fp, "\tmovq\t%s, %s(%%rip)\n",
+                                _stk.Name(r), id.c_str());
+        } else {
+                auto reg = std::string{_stk.Name(r)} + "b";
+                fprintf(_fp, "\tmovb\t%s, %s(%%rip)\n",
+                                reg.c_str(), id.c_str());
+        }
+
         return r;
 }
 
@@ -214,9 +237,9 @@ void CodeGen::Free(void)
         _stk.Free();
 }
 
-void CodeGen::SetGlo(const std::string &id)
+void CodeGen::SetGlo(int prim, int stype, const std::string &id)
 {
-        _tab.Set(id, new Sym{id});
+        _tab.Set(id, new Sym{prim, stype, id});
 }
 
 size_t CodeGen::cmp(size_t i, size_t j, const std::string &how)
@@ -283,7 +306,7 @@ size_t CodeGen::cmp_and_jmp(int type, size_t i, size_t j, int label)
         if (type < AST_EQ || type > AST_GE) {
                 puts("here");
                 usage("cmp_and_jmp: bad ast type",
-                                Ast{type, 0}.Name().c_str());
+                                Ast{type, TYPE_NONE, 0}.Name().c_str());
                 puts("here");
         }
 
@@ -308,7 +331,7 @@ size_t CodeGen::cmp_and_set(int type, size_t i, size_t j)
         if (type < AST_EQ || type > AST_GE) {
                 puts("here");
                 usage("cmp_and_set: bad ast type: %s\n",
-                                Ast{type, 0}.Name().c_str());
+                                Ast{type, TYPE_NONE, 0}.Name().c_str());
                 puts("here");
         }
 
@@ -351,4 +374,9 @@ void
 CodeGen::funcPost(void)
 {
         GenPost();
+}
+
+size_t CodeGen::widen(size_t r, int oldtype, int newtype)
+{
+        return r;
 }

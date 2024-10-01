@@ -6,6 +6,7 @@
 static void typeok(int type)
 {
         switch (type) {
+        case AST_NONE:
         case AST_ADD:
         case AST_SUB:
         case AST_MUL:
@@ -25,6 +26,7 @@ static void typeok(int type)
         case AST_IF:
         case AST_WHILE:
         case AST_FUNC:
+        case AST_WIDEN:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -35,66 +37,72 @@ Ast::Ast(void)
         : _left {nullptr},
         _right {nullptr},
         _mid {nullptr},
-        _type {AST_NONE}
+        _type {AST_NONE},
+        _dtype {TYPE_NONE}
 {}
 
-
-Ast::Ast(int type, Ast *left, Ast *right, int intlit)
+Ast::Ast(int type, int dtype, Ast *left, Ast *right, int intlit)
         : _left {left},
         _right {right},
         _mid {nullptr},
         _type {type},
-        _intlit {intlit}
+        _intlit {intlit},
+        _dtype {dtype}
 {
         typeok(_type);
 }
 
-Ast::Ast(int type, Ast *left, Ast *right, const std::string &id)
+Ast::Ast(int type, int dtype, Ast *left, Ast *right, const std::string &id)
         : _id {id},
         _left {left},
         _right {right},
         _mid {nullptr},
-        _type {type}
+        _type {type},
+        _dtype {dtype}
 {
         typeok(_type);
 }
 
-Ast::Ast(int type, int intlit)
+Ast::Ast(int type, int dtype, int intlit)
         : _left {nullptr},
         _right {nullptr},
         _mid {nullptr},
         _type {type},
-        _intlit {intlit}
+        _intlit {intlit},
+        _dtype {dtype}
 {
         typeok(_type);
 }
 
-Ast::Ast(int type, const std::string &id)
+Ast::Ast(int type, int dtype, const std::string &id)
         : _id {id},
         _left {nullptr},
         _right {nullptr},
         _mid {nullptr},
-        _type {type}
+        _type {type},
+        _dtype {dtype}
 {
         typeok(_type);
 }
 
-Ast::Ast(int type, Ast *left, int intlit)
+Ast::Ast(int type, int dtype, Ast *left, int intlit)
         : _left {left},
         _right {nullptr},
         _mid {nullptr},
         _type {type},
-        _intlit {intlit}
+        _intlit {intlit},
+        _dtype {dtype}
 {
         typeok(_type);
 }
 
-Ast::Ast(int type, Ast *left, const std::string &id)
+Ast::Ast(int type, int dtype, Ast *left, const std::string &id)
         : _id {id},
         _left {left},
         _right {nullptr},
         _mid {nullptr},
-        _type {type}
+        _type {type},
+        _dtype {dtype}
 {
         typeok(_type);
 }
@@ -147,6 +155,7 @@ std::string Ast::Name(void) const
                 "AST_IF",
                 "AST_WHILE",
                 "AST_FUNC",
+                "AST_WIDEN",
         };
 
         return names[_type];
@@ -162,12 +171,13 @@ void astfree(Ast *n)
         delete n;
 }
 
-Ast::Ast(int type, Ast *left, Ast *mid, Ast *right, int intlit)
+Ast::Ast(int type, int dtype, Ast *left, Ast *mid, Ast *right, int intlit)
         : _left {left},
         _right {right},
         _mid {mid},
         _type {type},
-        _intlit {intlit}
+        _intlit {intlit},
+        _dtype {dtype}
 {
         typeok(_type);
 }
@@ -175,4 +185,9 @@ Ast::Ast(int type, Ast *left, Ast *mid, Ast *right, int intlit)
 Ast *Ast::Mid(void) const
 {
         return _mid;
+}
+
+int Ast::Dtype(void) const
+{
+        return _dtype;
 }
