@@ -17,14 +17,8 @@ size_t RegStk::Get(void)
 
 void RegStk::Put(size_t r)
 {
-        if (r > _regs.size())
+        if (r >= _regs.size())
                 usage("freeing invalid register: %zu", r);
-
-        /*
-        for (size_t i = 0; i < _stk.size(); i++)
-                printf("%zu ", i);
-        printf("\n");
-        */
 
         if (_stk.size() == _regs.size())
                 usage("register stack already full");
@@ -42,6 +36,12 @@ const char *RegStk::Name(size_t r)
 
 void RegStk::Free(void)
 {
+        _stk.clear();
         for (size_t i = 0; i < _regs.size(); i++)
                 _stk.push_back(i);
+}
+
+size_t RegStk::Size(void) const
+{
+        return _stk.size();
 }
