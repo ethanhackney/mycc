@@ -3,9 +3,9 @@ int fred()
         return (56);
 }
 
-int printsomething()
+int something()
 {
-        return (23);
+        return (5);
 }
 
 void main()
@@ -13,8 +13,8 @@ void main()
         int dummy;
         int result;
 
-        dummy = printsomething(23);
+        dummy = printint(23);
         result = fred(10);
-        dummy = printsomething(result);
-        print result * dummy;
+        dummy = printint(result);
+        printint(result * dummy);
 }

@@ -20,6 +20,12 @@ void RegStk::Put(size_t r)
         if (r > _regs.size())
                 usage("freeing invalid register: %zu", r);
 
+        /*
+        for (size_t i = 0; i < _stk.size(); i++)
+                printf("%zu ", i);
+        printf("\n");
+        */
+
         if (_stk.size() == _regs.size())
                 usage("register stack already full");
 

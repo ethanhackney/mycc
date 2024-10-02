@@ -12,6 +12,8 @@ private:
                 "%r9",
                 "%r10",
                 "%r11",
+                "%r12",
+                "%r13",
         };
         std::vector<size_t>             _stk;   // register stack
 public:
