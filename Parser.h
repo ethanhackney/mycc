@@ -6,12 +6,15 @@
 #include "Error.h"
 #include "Lexer.h"
 #include "Type.h"
+#include <string>
+
+extern std::string func_id;
 
 // parser
 class Parser {
 private:
-        CodeGen &_cg;   // reference to code generator
-        Lexer   &_lex;  // reference to lexical analyzer
+        CodeGen         &_cg;   // reference to code generator
+        Lexer           &_lex;  // reference to lexical analyzer
 
         // parse a print statement
         Ast *parsePrint(void);
@@ -31,6 +34,10 @@ private:
         Ast *parseFor(void);
         // parse single statement
         Ast *parseSingle(void);
+        // parse return statement
+        Ast *parseRet(void);
+        // parse function call
+        Ast *parseCall(const std::string& id);
 public:
         // @lex:        reference to lexical analyzer
         // @cg:         reference to code generator

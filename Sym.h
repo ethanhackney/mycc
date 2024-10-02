@@ -11,11 +11,12 @@ private:
         std::string     _name;  // symbol name
         int             _prim;  // primitive type
         int             _stype; // structural type
+        int             _end;   // end label for functions
 public:
         // @name:       symbol name
         // @prim:       primitive type
         // @stype:      structural type
-        Sym(int prim, int stype, const std::string &name);
+        Sym(int prim, int stype, int end, const std::string &name);
 
         // get symbol name
         std::string Name(void) const;
@@ -23,6 +24,8 @@ public:
         int Prim(void) const;
 
         int Stype(void) const;
+
+        int End(void) const;
 };
 
 #endif

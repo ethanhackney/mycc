@@ -52,8 +52,6 @@ private:
         size_t ge(size_t i, size_t j);
         // generate instructions for if statement
         size_t genIfAst(Ast *n);
-        // get a new label
-        int getLabel(void);
         // generate jump instruction
         void jmp(int label);
         // generate label instruction
@@ -67,9 +65,13 @@ private:
         // generate function preamble
         void funcPre(const std::string &id);
         // generate function postamble
-        void funcPost(void);
+        void funcPost(const std::string &id);
         // widen a data type
         size_t widen(size_t r, int oldtype, int newtype);
+        // generate a return
+        void ret(size_t r, const std::string& id);
+        // generate a call
+        size_t call(size_t r, const std::string& id);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);
@@ -80,7 +82,7 @@ public:
         void GenPre(void);
 
         // generate postamble
-        void GenPost(void);
+        void GenPost(const std::string& id);
 
         // generate code to print int
         void GenPrintInt(size_t r);
@@ -98,7 +100,13 @@ public:
         void Free(void);
 
         // get symbol
-        void SetGlo(int prim, int stype, const std::string &id);
+        void SetGlo(int prim, int stype, int end, const std::string &id);
+
+        // get primitive data type size
+        size_t PrimSize(int prim);
+
+        // get a new label
+        int GetLabel(void);
 };
 
 #endif

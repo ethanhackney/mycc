@@ -3,12 +3,18 @@ int fred()
         return (56);
 }
 
+int printsomething()
+{
+        return (23);
+}
+
 void main()
 {
         int dummy;
         int result;
 
-        dummy = printint(23);
+        dummy = printsomething(23);
         result = fred(10);
-        dummy = printint(result);
+        dummy = printsomething(result);
+        print result * dummy;
 }

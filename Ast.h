@@ -29,6 +29,8 @@ enum {
         AST_WHILE,      // while statement
         AST_FUNC,       // function
         AST_WIDEN,      // widen data type
+        AST_RETURN,     // return statement
+        AST_CALL,       // function call
 };
 
 // abstract syntax tree

@@ -1,23 +1,27 @@
 #include "Type.h"
+#include "CodeGen.h"
 
-int type_compat(int *left, int *right, int onlyright)
+int type_compat(CodeGen& cg, int *left, int *right, int onlyright)
 {
-        if (*left == TYPE_VOID || *right == TYPE_VOID)
-                return 0;
-
         if (*left == *right) {
                 *left = 0;
                 *right = 0;
                 return 1;
         }
 
-        if (*left == TYPE_CHAR && *right == TYPE_INT) {
+        auto leftsize = cg.PrimSize(*left);
+        auto rightsize = cg.PrimSize(*right);
+
+        if (leftsize == 0 || rightsize == 0)
+                return 0;
+
+        if (leftsize < rightsize) {
                 *left = AST_WIDEN;
                 *right = 0;
                 return 1;
         }
 
-        if (*left == TYPE_INT && *right == TYPE_CHAR) {
+        if (rightsize < leftsize) {
                 if (onlyright)
                         return 0;
                 *left = 0;
@@ -37,6 +41,7 @@ const std::string type_name(int type)
         case TYPE_CHAR: return "TYPE_CHAR";
         case TYPE_INT:  return "TYPE_INT";
         case TYPE_VOID: return "TYPE_VOID";
+        case TYPE_LONG: return "TYPE_LONG";
         default:
                 usage("invalid type name: %d", type);
                 exit(0);

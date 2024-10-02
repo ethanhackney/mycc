@@ -1,4 +1,5 @@
 #include "CodeGen.h"
+#include "Parser.h"
 
 CodeGen::CodeGen(const std::string &path)
         : _path {path},
@@ -11,7 +12,7 @@ CodeGen::CodeGen(const std::string &path)
                 error("could not open %s", path.c_str());
 }
 
-int CodeGen::getLabel(void)
+int CodeGen::GetLabel(void)
 {
         return _id++;
 }
@@ -24,6 +25,9 @@ CodeGen::~CodeGen()
 
 void CodeGen::GenPre(void)
 {
+        Free();
+        fputs("\t.text\n", _fp);
+        /*
         fputs("\t.text\n"
 	      ".LC0:\n"
 	      "\t.string\t\"%d\\n\"\n"
@@ -41,11 +45,16 @@ void CodeGen::GenPre(void)
               "\tleave\n"
               "\tret\n"
               "\n", _fp);
+              */
 }
 
-void CodeGen::GenPost(void)
+void CodeGen::GenPost(const std::string& id)
 {
-        fputs("\tmovl	$0, %eax\n" "\tpopq	%rbp\n" "\tret\n", _fp);
+        auto s = _tab.Get(id);
+        label(s->End());
+        fputs("\tpopq   %rbp\n"
+              "\tret\n",
+              _fp);
 }
 
 void CodeGen::GenPrintInt(size_t r)
@@ -58,11 +67,10 @@ void CodeGen::GenPrintInt(size_t r)
 void CodeGen::GenGlo(const std::string &id)
 {
         auto s = _tab.Get(id);
+        int size = PrimSize(s->Prim());
 
-        if (s->Prim() == TYPE_INT)
-                fprintf(_fp, "\t.comm\t%s,8,8\n", id.c_str());
-        else
-                fprintf(_fp, "\t.comm\t%s,1,1\n", id.c_str());
+        fprintf(_fp, "\t.comm\t%s,%d,%d\n",
+                        id.c_str(), size, size);
 }
 
 size_t CodeGen::genIfAst(Ast *n)
@@ -70,9 +78,9 @@ size_t CodeGen::genIfAst(Ast *n)
         int falseid;
         int endid;
 
-        falseid = getLabel();
+        falseid = GetLabel();
         if (n->Right())
-                endid = getLabel();
+                endid = GetLabel();
 
         GenAst(n->Left(), (size_t)falseid, n->Type());
         Free();
@@ -113,7 +121,7 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         case AST_FUNC:
                 funcPre(n->Id());
                 GenAst(n->Left(), NIL_REG, n->Type());
-                funcPost();
+                funcPost(n->Id());
                 return NIL_REG;
         }
 
@@ -154,6 +162,11 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
                 return NIL_REG;
         case AST_WIDEN:
                 return widen(left, n->Left()->Dtype(), n->Dtype());
+        case AST_RETURN:
+                ret(left, func_id);
+                return NIL_REG;
+        case AST_CALL:
+                return call(left, n->Id());
         default:
                 usage("invalid ast type: %s", n->Name().c_str());
                 exit(EXIT_FAILURE);
@@ -203,25 +216,50 @@ size_t CodeGen::movGlo(const std::string &id)
         size_t r = _stk.Get();
         auto s = _tab.Get(id);
 
-        if (s->Prim() == TYPE_INT)
-                fprintf(_fp, "\tmovq\t%s(%%rip), %s\n", id.c_str(), _stk.Name(r));
-        else
-                fprintf(_fp, "\tmovzbq\t%s(%%rip), %s\n", id.c_str(), _stk.Name(r));
+        switch (s->Prim()) {
+        case TYPE_CHAR:
+                fprintf(_fp, "movzbq\t%s(%%rip), %s\n", id.c_str(),
+                                _stk.Name(r));
+                break;
+        case TYPE_INT:
+                fprintf(_fp, "movzb\t%s(%%rip), %s\n", id.c_str(),
+                                _stk.Name(r));
+                break;
+        case TYPE_LONG:
+                fprintf(_fp, "\tmovq\t%s(%%rip), %s\n", id.c_str(),
+                                _stk.Name(r));
+                break;
+        default:
+                usage("invalid data type: %s", type_name(s->Prim()));
+                exit(1);
+        }
 
         return r;
 }
 
 size_t CodeGen::strGlo(size_t r, const std::string &id)
 {
+        std::string reg;
         auto s = _tab.Get(id);
 
-        if (s->Prim() == TYPE_INT) {
-                fprintf(_fp, "\tmovq\t%s, %s(%%rip)\n",
-                                _stk.Name(r), id.c_str());
-        } else {
-                auto reg = std::string{_stk.Name(r)} + "b";
+        switch (s->Prim()) {
+        case TYPE_CHAR:
+                reg = std::string{_stk.Name(r)} + "b";
                 fprintf(_fp, "\tmovb\t%s, %s(%%rip)\n",
                                 reg.c_str(), id.c_str());
+                break;;
+        case TYPE_INT:
+                reg = std::string{_stk.Name(r)} + "d";
+                fprintf(_fp, "movl\t%s, %s(%%rip)\n",
+                                reg.c_str(), id.c_str());
+                break;
+        case TYPE_LONG:
+                fprintf(_fp, "movq\t%s, %s(%%rip)\n",
+                                _stk.Name(r), id.c_str());
+                break;
+        default:
+                usage("bad primitive: %s", type_name(s->Prim()));
+                exit(1);
         }
 
         return r;
@@ -237,9 +275,9 @@ void CodeGen::Free(void)
         _stk.Free();
 }
 
-void CodeGen::SetGlo(int prim, int stype, const std::string &id)
+void CodeGen::SetGlo(int prim, int stype, int end, const std::string &id)
 {
-        _tab.Set(id, new Sym{prim, stype, id});
+        _tab.Set(id, new Sym{prim, stype, end, id});
 }
 
 size_t CodeGen::cmp(size_t i, size_t j, const std::string &how)
@@ -304,10 +342,8 @@ size_t CodeGen::cmp_and_jmp(int type, size_t i, size_t j, int label)
         };
 
         if (type < AST_EQ || type > AST_GE) {
-                puts("here");
                 usage("cmp_and_jmp: bad ast type",
                                 Ast{type, TYPE_NONE, 0}.Name().c_str());
-                puts("here");
         }
 
         fprintf(_fp, "\tcmpq\t%s, %s\n", _stk.Name(j), _stk.Name(i));
@@ -329,10 +365,8 @@ size_t CodeGen::cmp_and_set(int type, size_t i, size_t j)
         std::string b = std::string{_stk.Name(j)} + "b";
 
         if (type < AST_EQ || type > AST_GE) {
-                puts("here");
                 usage("cmp_and_set: bad ast type: %s\n",
                                 Ast{type, TYPE_NONE, 0}.Name().c_str());
-                puts("here");
         }
 
         fprintf(_fp, "\tcmpq\t%s, %s\n", _stk.Name(j), _stk.Name(i));
@@ -344,8 +378,8 @@ size_t CodeGen::cmp_and_set(int type, size_t i, size_t j)
 
 size_t CodeGen::genWhile(Ast *n)
 {
-        auto start = getLabel();
-        auto end = getLabel();
+        auto start = GetLabel();
+        auto end = GetLabel();
         label(start);
         GenAst(n->Left(), end, n->Type());
         Free();
@@ -371,12 +405,59 @@ void CodeGen::funcPre(const std::string &id)
 }
 
 void
-CodeGen::funcPost(void)
+CodeGen::funcPost(const std::string& id)
 {
-        GenPost();
+        GenPost(id);
 }
 
 size_t CodeGen::widen(size_t r, int oldtype, int newtype)
 {
         return r;
+}
+
+size_t CodeGen::PrimSize(int prim)
+{
+        static int sizes[] = {
+                0, 0, 1, 4, 8,
+        };
+
+        if (prim < 0 || prim >= (int)(sizeof(sizes) / sizeof(*sizes)))
+                usage("invalid primitive type: %s", type_name(prim));
+
+        return sizes[prim];
+}
+
+void CodeGen::ret(size_t r, const std::string& id)
+{
+        std::string reg;
+        auto s = _tab.Get(id);
+
+        switch (s->Prim()) {
+        case TYPE_CHAR:
+                reg = std::string{_stk.Name(r)} + "b";
+                fprintf(_fp, "\tmovzbl\t%s, %%eax\n", reg.c_str());
+                break;
+        case TYPE_INT:
+                reg = std::string{_stk.Name(r)} + "d";
+                fprintf(_fp, "\tmovl\t%s, %%eax\n", reg.c_str());
+                break;
+        case TYPE_LONG:
+                fprintf(_fp, "\tmovq\t%s, %%rax\n", _stk.Name(r));
+                break;
+        default:
+                usage("bad type: %s", type_name(s->Prim()));
+                exit(1);
+        }
+
+        jmp(s->End());
+}
+
+size_t CodeGen::call(size_t r, const std::string& id)
+{
+        size_t out = _stk.Get();
+        fprintf(_fp, "\tmovq\t%s, %%rdi\n", _stk.Name(r));
+        fprintf(_fp, "\tcall\t%s\n", id.c_str());
+        fprintf(_fp, "\tmovq\t%%rax, %s\n", _stk.Name(out));
+        _stk.Put(r);
+        return out;
 }

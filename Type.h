@@ -11,6 +11,7 @@ enum {
         TYPE_VOID,      // void
         TYPE_CHAR,      // char
         TYPE_INT,       // int
+        TYPE_LONG,      // long
 };
 
 // structural types
@@ -19,7 +20,9 @@ enum {
         STYPE_FUNC,     // function
 };
 
-int type_compat(int *left, int *right, int onlyright);
+class CodeGen;
+
+int type_compat(CodeGen& cg, int *left, int *right, int onlyright);
 
 const std::string type_name(int type);
 

@@ -3,6 +3,7 @@
 Lexer::Lexer(const std::string &path)
         : _path {path},
         _curr {},
+        _rej {},
         _fp {fopen(path.c_str(), "r")},
         _pc {'\0'}
 {
@@ -58,82 +59,90 @@ std::string Lexer::readid(int c)
 
 Token Lexer::Next(void)
 {
-        for (;;) {
-                auto c = nextchar();
+        if (_rej.Type() != TOK_EOF) {
+                _curr = _rej;
+                _rej = Token{TOK_EOF, ""};
+                return _curr;
+        }
 
-                if (isspace(c))
-                        continue;
+        int c;
+        while ((c = nextchar()) != EOF && isspace(c))
+                ;
 
-                switch (c) {
-                case EOF:
-                        return _curr = Token{TOK_EOF, ""};
-                case '+':
-                        return _curr = Token{TOK_PLUS, "+"};
-                case '-':
-                        return _curr = Token{TOK_MINUS, "-"};
-                case '*':
-                        return _curr = Token{TOK_STAR, "*"};
-                case '/':
-                        return _curr = Token{TOK_SLASH, "/"};
-                case '=':
-                        if ((c = nextchar()) == '=') {
-                                return _curr = Token{TOK_EQ, "=="};
-                        }
-                        _pc = c;
-                        return _curr = Token{TOK_EQUALS, "="};
-                case '!':
-                        if ((c = nextchar()) == '=')
-                                return _curr = Token{TOK_NE, "!="};
-                        usage("bad character: %c", c);
-                case '<':
-                        if ((c = nextchar()) == '=')
-                                return _curr = Token{TOK_LE, "<="};
-                        _pc = c;
-                        return _curr = Token{TOK_LT, "<"};
-                case '>':
-                        if ((c = nextchar()) == '=')
-                                return _curr = Token{TOK_GE, ">="};
-                        _pc = c;
-                        return _curr = Token{TOK_GT, ">"};
-                case ';':
-                        return _curr = Token{TOK_SEMI, ";"};
-                case '{':
-                        return _curr = Token{TOK_LBRACE, "{"};
-                case '}':
-                        return _curr = Token{TOK_RBRACE, "}"};
-                case '(':
-                        return _curr = Token{TOK_LPAREN, "("};
-                case ')':
-                        return _curr = Token{TOK_RPAREN, ")"};
+        switch (c) {
+        case EOF:
+                return _curr = Token{TOK_EOF, ""};
+        case '+':
+                return _curr = Token{TOK_PLUS, "+"};
+        case '-':
+                return _curr = Token{TOK_MINUS, "-"};
+        case '*':
+                return _curr = Token{TOK_STAR, "*"};
+        case '/':
+                return _curr = Token{TOK_SLASH, "/"};
+        case '=':
+                if ((c = nextchar()) == '=') {
+                        return _curr = Token{TOK_EQ, "=="};
                 }
+                _pc = c;
+                return _curr = Token{TOK_EQUALS, "="};
+        case '!':
+                if ((c = nextchar()) == '=')
+                        return _curr = Token{TOK_NE, "!="};
+                usage("bad character: %c", c);
+        case '<':
+                if ((c = nextchar()) == '=')
+                        return _curr = Token{TOK_LE, "<="};
+                _pc = c;
+                return _curr = Token{TOK_LT, "<"};
+        case '>':
+                if ((c = nextchar()) == '=')
+                        return _curr = Token{TOK_GE, ">="};
+                _pc = c;
+                return _curr = Token{TOK_GT, ">"};
+        case ';':
+                return _curr = Token{TOK_SEMI, ";"};
+        case '{':
+                return _curr = Token{TOK_LBRACE, "{"};
+        case '}':
+                return _curr = Token{TOK_RBRACE, "}"};
+        case '(':
+                return _curr = Token{TOK_LPAREN, "("};
+        case ')':
+                return _curr = Token{TOK_RPAREN, ")"};
+        }
 
-                if (isdigit(c)) {
-                        auto n = readint(c);
-                        return _curr = Token{TOK_INTLIT, n};
-                } else if (isalpha(c) || c == '_') {
-                        auto w = readid(c);
+        if (isdigit(c)) {
+                auto n = readint(c);
+                return _curr = Token{TOK_INTLIT, n};
+        } else if (isalpha(c) || c == '_') {
+                auto w = readid(c);
 
-                        if (w == "print")
-                                return _curr = Token{TOK_PRINT, w};
-                        if (w == "int")
-                                return _curr = Token{TOK_INT, w};
-                        if (w == "if")
-                                return _curr = Token{TOK_IF, w};
-                        if (w == "else")
-                                return _curr = Token{TOK_ELSE, w};
-                        if (w == "while")
-                                return _curr = Token{TOK_WHILE, w};
-                        if (w == "for")
-                                return _curr = Token{TOK_FOR, w};
-                        if (w == "void")
-                                return _curr = Token{TOK_VOID, w};
-                        if (w == "char")
-                                return _curr = Token{TOK_CHAR, w};
+                if (w == "print")
+                        return _curr = Token{TOK_PRINT, w};
+                if (w == "int")
+                        return _curr = Token{TOK_INT, w};
+                if (w == "if")
+                        return _curr = Token{TOK_IF, w};
+                if (w == "else")
+                        return _curr = Token{TOK_ELSE, w};
+                if (w == "while")
+                        return _curr = Token{TOK_WHILE, w};
+                if (w == "for")
+                        return _curr = Token{TOK_FOR, w};
+                if (w == "void")
+                        return _curr = Token{TOK_VOID, w};
+                if (w == "char")
+                        return _curr = Token{TOK_CHAR, w};
+                if (w == "long")
+                        return _curr = Token{TOK_LONG, w};
+                if (w == "return")
+                        return _curr = Token{TOK_RETURN, w};
 
-                        return _curr = Token{TOK_IDENT, w};
-                } else {
-                        usage("invalid character: %c", c);
-                }
+                return _curr = Token{TOK_IDENT, w};
+        } else {
+                usage("invalid character: %c", c);
+                exit(1);
         }
 }
 
@@ -151,4 +160,11 @@ void Lexer::Eat(int type)
         }
         error("expected %s, got %s", Token{type, ""}.Name().c_str(),
                         _curr.Name().c_str());
+}
+
+void Lexer::Reject(Token tok)
+{
+        if (_rej.Type() != TOK_EOF)
+                usage("only one reject allowed");
+        _rej = tok;
 }

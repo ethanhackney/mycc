@@ -18,6 +18,10 @@ enum {
         TOK_GT,         // '>'
         TOK_LE,         // '<='
         TOK_GE,         // '>='
+        TOK_VOID,       // 'void'
+        TOK_CHAR,       // 'char'
+        TOK_INT,        // 'int'
+        TOK_LONG,       // 'long'
         TOK_INTLIT,     // integer literal
         TOK_SEMI,       // ';'
         TOK_EQUALS,     // '='
@@ -27,13 +31,11 @@ enum {
         TOK_LPAREN,     // '('
         TOK_RPAREN,     // ')'
         TOK_PRINT,      // 'print'
-        TOK_INT,        // 'int'
         TOK_IF,         // 'if'
         TOK_ELSE,       // 'else'
         TOK_WHILE,      // 'while'
         TOK_FOR,        // 'for'
-        TOK_VOID,       // 'void'
-        TOK_CHAR,       // 'char'
+        TOK_RETURN,     // 'return'
 };
 
 // token

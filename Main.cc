@@ -14,6 +14,8 @@ int main(int argc, char **argv)
         CodeGen cg {"out.s"};
         Parser p {l, cg};
 
+        cg.SetGlo(TYPE_CHAR, STYPE_FUNC, 0, "printint");
+
         cg.GenPre();
         for (;;) {
                 auto n = p.ParseFuncDecl();

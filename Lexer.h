@@ -12,6 +12,7 @@ class Lexer {
 private:
         std::string     _path;  // path name of file being read
         Token           _curr;  // current token
+        Token           _rej;   // rejected token
         FILE            *_fp;   // FILE to read from
         int             _pc;    // putback character
 
@@ -35,6 +36,9 @@ public:
 
         // skip if token type is type or error out
         void Eat(int type);
+
+        // add token back into input
+        void Reject(Token tok);
 
         ~Lexer();
 };

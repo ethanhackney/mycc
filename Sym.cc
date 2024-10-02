@@ -1,15 +1,17 @@
 #include "Sym.h"
 
-Sym::Sym(int prim, int stype, const std::string &name)
+Sym::Sym(int prim, int stype, int end, const std::string &name)
         : _name {name},
         _prim {prim},
-        _stype {stype}
+        _stype {stype},
+        _end {end}
 {
         switch (_prim) {
         case TYPE_NONE:
         case TYPE_VOID:
         case TYPE_CHAR:
         case TYPE_INT:
+        case TYPE_LONG:
                 break;
         default:
                 usage("invalid primitive data type: %d", _prim);
@@ -37,4 +39,9 @@ int Sym::Prim(void) const
 int Sym::Stype(void) const
 {
         return _stype;
+}
+
+int Sym::End(void) const
+{
+        return _end;
 }

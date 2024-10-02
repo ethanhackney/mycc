@@ -27,6 +27,8 @@ static void typeok(int type)
         case AST_WHILE:
         case AST_FUNC:
         case AST_WIDEN:
+        case AST_RETURN:
+        case AST_CALL:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -156,6 +158,8 @@ std::string Ast::Name(void) const
                 "AST_WHILE",
                 "AST_FUNC",
                 "AST_WIDEN",
+                "AST_RETURN",
+                "AST_CALL",
         };
 
         return names[_type];
