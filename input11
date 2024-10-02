@@ -8,7 +8,7 @@ void main()
         int x;
 
         x = 2;
-        print x;
+        printint(x);
         x = fred(2);
-        print x;
+        printint(x);
 }
