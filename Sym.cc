@@ -12,6 +12,10 @@ Sym::Sym(int prim, int stype, int end, const std::string &name)
         case TYPE_CHAR:
         case TYPE_INT:
         case TYPE_LONG:
+        case TYPE_VOID_P:
+        case TYPE_CHAR_P:
+        case TYPE_INT_P:
+        case TYPE_LONG_P:
                 break;
         default:
                 usage("invalid primitive data type: %d", _prim);

@@ -148,6 +148,10 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
                 return NIL_REG;
         case AST_CALL:
                 return call(left, n->Id());
+        case AST_ADDR:
+                return addr(n->Id());
+        case AST_DEREF:
+                return deref(left, n->Left()->Dtype());
         default:
                 usage("invalid ast type: %s", n->Name().c_str());
                 exit(EXIT_FAILURE);
@@ -203,10 +207,18 @@ size_t CodeGen::movGlo(const std::string &id)
                                 _stk.Name(r));
                 break;
         case TYPE_INT:
-                fprintf(_fp, "movzb\t%s(%%rip), %s\n", id.c_str(),
+                /* NOTE: this is the assembly line that was
+                 * having problems: it use to be movzbl but the
+                 * assembler didn't like that, but it likes this
+                 * and i dont know why
+                 */
+                fprintf(_fp, "movzbq\t%s(%%rip), %s\n", id.c_str(),
                                 _stk.Name(r));
                 break;
         case TYPE_LONG:
+        case TYPE_CHAR_P:
+        case TYPE_INT_P:
+        case TYPE_LONG_P:
                 fprintf(_fp, "\tmovq\t%s(%%rip), %s\n", id.c_str(),
                                 _stk.Name(r));
                 break;
@@ -235,6 +247,9 @@ size_t CodeGen::strGlo(size_t r, const std::string &id)
                                 reg.c_str(), id.c_str());
                 break;
         case TYPE_LONG:
+        case TYPE_CHAR_P:
+        case TYPE_INT_P:
+        case TYPE_LONG_P:
                 fprintf(_fp, "movq\t%s, %s(%%rip)\n",
                                 _stk.Name(r), id.c_str());
                 break;
@@ -399,7 +414,7 @@ size_t CodeGen::widen(size_t r, int oldtype, int newtype)
 size_t CodeGen::PrimSize(int prim)
 {
         static int sizes[] = {
-                0, 0, 1, 4, 8,
+                0, 0, 1, 4, 8, 8, 8, 8,
         };
 
         if (prim < 0 || prim >= (int)(sizeof(sizes) / sizeof(*sizes)))
@@ -441,4 +456,30 @@ size_t CodeGen::call(size_t r, const std::string& id)
         fprintf(_fp, "\tmovq\t%%rax, %s\n", _stk.Name(out));
         _stk.Put(r);
         return out;
+}
+
+size_t CodeGen::addr(const std::string& id)
+{
+        auto r = _stk.Get();
+        fprintf(_fp, "\tleaq\t%s(%%rip), %s\n", id.c_str(), _stk.Name(r));
+        return r;
+}
+
+size_t CodeGen::deref(size_t r, int datatype)
+{
+        switch (datatype) {
+        case TYPE_CHAR_P:
+                fprintf(_fp, "\tmovzbq\t(%s), %s\n", _stk.Name(r),
+                                _stk.Name(r));
+                break;
+        case TYPE_INT_P:
+                fprintf(_fp, "\tmovq\t(%s), %s\n", _stk.Name(r),
+                                _stk.Name(r));
+                break;
+        case TYPE_LONG_P:
+                fprintf(_fp, "\tmovq\t(%s), %s\n", _stk.Name(r),
+                                _stk.Name(r));
+                break;
+        }
+        return r;
 }

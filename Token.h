@@ -8,34 +8,36 @@
 // token types
 enum {
         TOK_EOF,        // end of file
-        TOK_PLUS,       // '+'
-        TOK_MINUS,      // '-'
-        TOK_STAR,       // '*'
-        TOK_SLASH,      // '/'
-        TOK_EQ,         // '=='
-        TOK_NE,         // '!='
-        TOK_LT,         // '<'
-        TOK_GT,         // '>'
-        TOK_LE,         // '<='
-        TOK_GE,         // '>='
-        TOK_VOID,       // 'void'
-        TOK_CHAR,       // 'char'
-        TOK_INT,        // 'int'
-        TOK_LONG,       // 'long'
+        TOK_PLUS,       // "+"
+        TOK_MINUS,      // "-"
+        TOK_STAR,       // "*"
+        TOK_SLASH,      // "/"
+        TOK_EQ,         // "=="
+        TOK_NE,         // "!="
+        TOK_LT,         // "<"
+        TOK_GT,         // ">"
+        TOK_LE,         // "<="
+        TOK_GE,         // ">="
+        TOK_VOID,       // "void"
+        TOK_CHAR,       // "char"
+        TOK_INT,        // "int"
+        TOK_LONG,       // "long"
         TOK_INTLIT,     // integer literal
-        TOK_SEMI,       // ';'
-        TOK_EQUALS,     // '='
+        TOK_SEMI,       // ";"
+        TOK_EQUALS,     // "="
         TOK_IDENT,      // identifier
-        TOK_LBRACE,     // '{'
-        TOK_RBRACE,     // '}'
-        TOK_LPAREN,     // '('
-        TOK_RPAREN,     // ')'
-        TOK_PRINT,      // 'print'
-        TOK_IF,         // 'if'
-        TOK_ELSE,       // 'else'
-        TOK_WHILE,      // 'while'
-        TOK_FOR,        // 'for'
-        TOK_RETURN,     // 'return'
+        TOK_LBRACE,     // "{"
+        TOK_RBRACE,     // "}"
+        TOK_LPAREN,     // "("
+        TOK_RPAREN,     // ")"
+        TOK_AMPER,      // "&"
+        TOK_LOGAND,     // "&&"
+        TOK_PRINT,      // "print"
+        TOK_IF,         // "if"
+        TOK_ELSE,       // "else"
+        TOK_WHILE,      // "while"
+        TOK_FOR,        // "for"
+        TOK_RETURN,     // "return"
 };
 
 // token

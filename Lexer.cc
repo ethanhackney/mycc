@@ -110,6 +110,11 @@ Token Lexer::Next(void)
                 return _curr = Token{TOK_LPAREN, "("};
         case ')':
                 return _curr = Token{TOK_RPAREN, ")"};
+        case '&':
+                if ((c = nextchar()) == '&')
+                        return _curr = Token{TOK_LOGAND, "&&"};
+                _pc = c;
+                return _curr = Token{TOK_AMPER, "&"};
         }
 
         if (isdigit(c)) {

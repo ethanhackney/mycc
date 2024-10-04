@@ -2,18 +2,31 @@
 
 std::string func_id;
 
-static int tok2prim(int tok)
+static int tok2prim(Lexer &lex, int tok)
 {
-        if (tok == TOK_CHAR)
-                return TYPE_CHAR;
-        if (tok == TOK_INT)
-                return TYPE_INT;
-        if (tok == TOK_LONG)
-                return TYPE_LONG;
-        if (tok == TOK_VOID)
-                return TYPE_VOID;
-        usage("%s not a primitive", Token{tok, ""}.Name().c_str());
-        exit(1);
+        int type;
+
+        if (tok == TOK_CHAR) {
+                type = TYPE_CHAR;
+        } else if (tok == TOK_INT) {
+                type = TYPE_INT;
+        } else if (tok == TOK_LONG) {
+                type = TYPE_LONG;
+        } else if (tok == TOK_VOID) {
+                type = TYPE_VOID;
+        } else {
+                usage("%s not a primitive", Token{tok, ""}.Name().c_str());
+                exit(EXIT_FAILURE);
+        }
+
+        for (;;) {
+                lex.Next();
+                if (lex.Curr().Type() != TOK_STAR)
+                        break;
+                type = ptr_to(type);
+        }
+
+        return type;
 }
 
 Parser::Parser(Lexer &lex, CodeGen &cg)
@@ -130,7 +143,7 @@ static int op_prec(int type)
 
 Ast *Parser::parseExpr(int ptp)
 {
-        auto left = parsePrimary();
+        auto left = parsePrefix();
         auto tt = _lex.Curr().Type();
         if (tt == TOK_SEMI || tt == TOK_RPAREN)
                 return left;
@@ -183,8 +196,7 @@ Ast *Parser::parsePrint(void)
 
 void Parser::parseVarDecl(void)
 {
-        auto type = tok2prim(_lex.Curr().Type());
-        _lex.Next();
+        auto type = tok2prim(_lex, _lex.Curr().Type());
         auto id = _lex.Curr().Lex();
         _lex.Eat(TOK_IDENT);
         _cg.SetGlo(type, STYPE_VAR, 0, id);
@@ -297,8 +309,7 @@ Ast *Parser::parseSingle(void)
 
 Ast *Parser::ParseFuncDecl(void)
 {
-        auto type = tok2prim(_lex.Curr().Type());
-        _lex.Next();
+        auto type = tok2prim(_lex, _lex.Curr().Type());
 
         auto id = _lex.Curr().Lex();
         _lex.Eat(TOK_IDENT);
@@ -312,6 +323,8 @@ Ast *Parser::ParseFuncDecl(void)
         auto n = ParseCompound();
 
         if (type != TYPE_VOID) {
+                if (n == nullptr)
+                        usage("empty non-void function");
                 auto fin = n;
                 if (n->Type() == AST_GLUE)
                         fin = n->Right();
@@ -352,4 +365,36 @@ Ast *Parser::parseCall(const std::string& id)
         tree = new Ast{AST_CALL, s->Prim(), tree, id};
         _lex.Eat(TOK_RPAREN);
         return tree;
+}
+
+Ast *Parser::parsePrefix(void)
+{
+        Ast *n;
+
+        switch (_lex.Curr().Type()) {
+        case TOK_AMPER:
+                _lex.Next();
+                n = parsePrefix();
+
+                if (n->Type() != AST_IDENT)
+                        usage("applying & to non-identifier");
+
+                n->SetType(AST_ADDR);
+                n->SetDtype(ptr_to(n->Dtype()));
+                break;
+        case TOK_STAR:
+                _lex.Next();
+                n = parsePrefix();
+
+                if (n->Type() != AST_IDENT && n->Type() != AST_DEREF)
+                        usage("* followed by ident or *");
+
+                n = new Ast{AST_DEREF, val_at(n->Dtype()), n, 0};
+                break;
+        default:
+                n = parsePrimary();
+                break;
+        }
+
+        return n;
 }

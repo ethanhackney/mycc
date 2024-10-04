@@ -31,6 +31,8 @@ enum {
         AST_WIDEN,      // widen data type
         AST_RETURN,     // return statement
         AST_CALL,       // function call
+        AST_DEREF,      // pointer dereference
+        AST_ADDR,       // get address
 };
 
 // abstract syntax tree
@@ -113,6 +115,10 @@ public:
         std::string Name(void) const;
 
         int Dtype(void) const;
+
+        void SetType(int type);
+
+        void SetDtype(int type);
 };
 
 // free ast

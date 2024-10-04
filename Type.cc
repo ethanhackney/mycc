@@ -37,11 +37,15 @@ int type_compat(CodeGen& cg, int *left, int *right, int onlyright)
 const std::string type_name(int type)
 {
         switch (type) {
-        case TYPE_NONE: return "TYPE_NONE";
-        case TYPE_CHAR: return "TYPE_CHAR";
-        case TYPE_INT:  return "TYPE_INT";
-        case TYPE_VOID: return "TYPE_VOID";
-        case TYPE_LONG: return "TYPE_LONG";
+        case TYPE_NONE:         return "TYPE_NONE";
+        case TYPE_CHAR:         return "TYPE_CHAR";
+        case TYPE_INT:          return "TYPE_INT";
+        case TYPE_VOID:         return "TYPE_VOID";
+        case TYPE_LONG:         return "TYPE_LONG";
+        case TYPE_VOID_P:       return "TYPE_VOID_P";
+        case TYPE_CHAR_P:       return "TYPE_CHAR_P";
+        case TYPE_INT_P:        return "TYPE_INT_P";
+        case TYPE_LONG_P:       return "TYPE_LONG_P";
         default:
                 usage("invalid type name: %d", type);
                 exit(0);
@@ -56,5 +60,39 @@ const std::string stype_name(int stype)
         default:
                 usage("invalid stype name: %d", stype);
                 exit(0);
+        }
+}
+
+int ptr_to(int type)
+{
+        switch (type) {
+        case TYPE_VOID:
+                return TYPE_VOID_P;
+        case TYPE_CHAR:
+                return TYPE_CHAR_P;
+        case TYPE_INT:
+                return TYPE_INT_P;
+        case TYPE_LONG:
+                return TYPE_LONG_P;
+        default:
+                usage("ptr_to(): invalid type: %d", type);
+                exit(EXIT_FAILURE);
+        }
+}
+
+int val_at(int type)
+{
+        switch (type) {
+        case TYPE_VOID_P:
+                return TYPE_VOID;
+        case TYPE_CHAR_P:
+                return TYPE_CHAR;
+        case TYPE_INT_P:
+                return TYPE_INT;
+        case TYPE_LONG_P:
+                return TYPE_LONG;
+        default:
+                usage("val_at(): invalid type %d", type);
+                exit(EXIT_FAILURE);
         }
 }

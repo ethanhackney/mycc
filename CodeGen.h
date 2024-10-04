@@ -72,6 +72,10 @@ private:
         void ret(size_t r, const std::string& id);
         // generate a call
         size_t call(size_t r, const std::string& id);
+        // generate instructions to take address
+        size_t addr(const std::string& id);
+        // generate dereference
+        size_t deref(size_t r, int datatype);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);

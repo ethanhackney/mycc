@@ -29,6 +29,8 @@ static void typeok(int type)
         case AST_WIDEN:
         case AST_RETURN:
         case AST_CALL:
+        case AST_DEREF:
+        case AST_ADDR:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -160,6 +162,8 @@ std::string Ast::Name(void) const
                 "AST_WIDEN",
                 "AST_RETURN",
                 "AST_CALL",
+                "AST_DEREF",
+                "AST_ADDR",
         };
 
         return names[_type];
@@ -194,4 +198,14 @@ Ast *Ast::Mid(void) const
 int Ast::Dtype(void) const
 {
         return _dtype;
+}
+
+void Ast::SetType(int type)
+{
+        _type = type;
+}
+
+void Ast::SetDtype(int type)
+{
+        _dtype = type;
 }
