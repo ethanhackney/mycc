@@ -17,11 +17,5 @@ int main(int argc, char **argv)
         cg.SetGlo(TYPE_CHAR, STYPE_FUNC, 0, "printint");
 
         cg.GenPre();
-        for (;;) {
-                auto n = p.ParseFuncDecl();
-                cg.GenAst(n, NIL_REG, AST_NONE);
-                astfree(n);
-                if (l.Curr().Type() == TOK_EOF)
-                        break;
-        }
+        p.ParseDecls();
 }

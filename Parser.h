@@ -19,7 +19,7 @@ private:
         // parse a print statement
         Ast *parsePrint(void);
         // parse a variable declaration statement
-        void parseVarDecl(void);
+        void parseVarDecl(int type, const std::string& id);
         // parse assignment statement
         Ast *parseAssign(void);
         // parse expression
@@ -49,7 +49,10 @@ public:
         Ast *ParseCompound(void);
 
         // parse a function declaration
-        Ast *ParseFuncDecl(void);
+        Ast *ParseFuncDecl(int type, const std::string& id);
+
+        // parse global declarations
+        void ParseDecls(void);
 };
 
 #endif

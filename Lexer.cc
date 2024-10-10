@@ -115,6 +115,8 @@ Token Lexer::Next(void)
                         return _curr = Token{TOK_LOGAND, "&&"};
                 _pc = c;
                 return _curr = Token{TOK_AMPER, "&"};
+        case ',':
+                return _curr = Token{TOK_COMMA, ","};
         }
 
         if (isdigit(c)) {

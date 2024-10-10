@@ -194,14 +194,25 @@ Ast *Parser::parsePrint(void)
         return expr;
 }
 
-void Parser::parseVarDecl(void)
+void Parser::parseVarDecl(int type, const std::string& id)
 {
-        auto type = tok2prim(_lex, _lex.Curr().Type());
-        auto id = _lex.Curr().Lex();
-        _lex.Eat(TOK_IDENT);
-        _cg.SetGlo(type, STYPE_VAR, 0, id);
-        _cg.GenGlo(id);
-        _lex.Eat(TOK_SEMI);
+        auto ident = std::string{id};
+
+        for (;;) {
+                _cg.SetGlo(type, STYPE_VAR, 0, ident);
+                _cg.GenGlo(ident);
+                if (_lex.Curr().Type() == TOK_SEMI) {
+                        _lex.Eat(TOK_SEMI);
+                        break;
+                }
+                if (_lex.Curr().Type() == TOK_COMMA) {
+                        _lex.Eat(TOK_COMMA);
+                        ident = _lex.Curr().Lex();
+                        _lex.Eat(TOK_IDENT);
+                        continue;
+                }
+                usage("missing , or ; after identifier");
+        }
 }
 
 Ast *Parser::parseAssign(void)
@@ -283,13 +294,19 @@ Ast *Parser::parseFor(void)
 
 Ast *Parser::parseSingle(void)
 {
+        std::string id;
+        int type;
+
         switch (_lex.Curr().Type()) {
         case TOK_PRINT:
                 return parsePrint();
         case TOK_CHAR:
         case TOK_INT:
         case TOK_LONG:
-                parseVarDecl();
+                type = tok2prim(_lex, _lex.Curr().Type());
+                id = _lex.Curr().Lex();
+                _lex.Eat(TOK_IDENT);
+                parseVarDecl(type, id);
                 return nullptr;
         case TOK_IDENT:
                 return parseAssign();
@@ -307,12 +324,8 @@ Ast *Parser::parseSingle(void)
         }
 }
 
-Ast *Parser::ParseFuncDecl(void)
+Ast *Parser::ParseFuncDecl(int type, const std::string& id)
 {
-        auto type = tok2prim(_lex, _lex.Curr().Type());
-
-        auto id = _lex.Curr().Lex();
-        _lex.Eat(TOK_IDENT);
         func_id = id;
 
         auto end = _cg.GetLabel();
@@ -397,4 +410,22 @@ Ast *Parser::parsePrefix(void)
         }
 
         return n;
+}
+
+void Parser::ParseDecls(void)
+{
+        for (;;) {
+                auto type = tok2prim(_lex, _lex.Curr().Type());
+                auto id = _lex.Curr().Lex();
+                _lex.Eat(TOK_IDENT);
+                if (_lex.Curr().Type() == TOK_LPAREN) {
+                        auto n = ParseFuncDecl(type, id);
+                        _cg.GenAst(n, NIL_REG, 0);
+                        astfree(n);
+                } else {
+                        parseVarDecl(type, id);
+                }
+                if (_lex.Curr().Type() == TOK_EOF)
+                        break;
+        }
 }

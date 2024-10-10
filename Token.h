@@ -38,6 +38,7 @@ enum {
         TOK_WHILE,      // "while"
         TOK_FOR,        // "for"
         TOK_RETURN,     // "return"
+        TOK_COMMA,      // ","
 };
 
 // token
