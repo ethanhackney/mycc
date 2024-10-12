@@ -152,18 +152,18 @@ Ast *Parser::parseExpr(int ptp)
                 _lex.Next();
                 auto right = parseExpr(op_prec(tt));
 
-                auto lefttype = left->Dtype();
-                auto righttype = right->Dtype();
-                if (!type_compat(_cg, &lefttype, &righttype, 0)) {
-                        usage("incompatible types %s and %s",
-                                        type_name(lefttype).c_str(),
-                                        type_name(righttype).c_str());
+                auto op = tok2ast(tt);
+                auto ltmp = modify_type(_cg, left, right->Dtype(), op);
+                auto rtmp = modify_type(_cg, right, left->Dtype(), op);
+                if (ltmp == nullptr && rtmp == nullptr) {
+                        puts("parseExpr()");
+                        usage("incompatible types");
                 }
 
-                if (lefttype)
-                        left = new Ast{lefttype, right->Dtype(), left, 0};
-                if (righttype)
-                        right = new Ast{righttype, left->Dtype(), right, 0};
+                if (ltmp != nullptr)
+                        left = ltmp;
+                if (rtmp != nullptr)
+                        right = rtmp;
 
                 left = new Ast{tok2ast(tt), left->Dtype(), left, right, 0};
                 tt = _lex.Curr().Type();
@@ -179,16 +179,12 @@ Ast *Parser::parsePrint(void)
         _lex.Eat(TOK_PRINT);
         auto expr = parseExpr(0);
 
-        int lefttype = TYPE_INT;
-        auto righttype = expr->Dtype();
-        if (!type_compat(_cg, &lefttype, &righttype, 0)) {
-                usage("type %s not compatible with %s",
-                                type_name(lefttype).c_str(),
-                                type_name(righttype).c_str());
+        printf("%s\n", type_name(expr->Dtype()).c_str());
+        expr = modify_type(_cg, expr, TYPE_INT, 0);
+        if (expr == nullptr) {
+                puts("parsePrint()");
+                usage("incompatible types");
         }
-
-        if (righttype)
-                expr = new Ast{righttype, TYPE_INT, expr, 0};
 
         expr = new Ast{AST_PRINT, TYPE_NONE, expr, 0};
         return expr;
@@ -230,16 +226,11 @@ Ast *Parser::parseAssign(void)
 
         auto left = parseExpr(0);
 
-        auto lefttype = left->Dtype();
-        auto righttype = right->Dtype();
-        if (!type_compat(_cg, &lefttype, &righttype, 1)) {
-                usage("incompatible types %s and %s",
-                                type_name(lefttype).c_str(),
-                                type_name(righttype).c_str());
+        left = modify_type(_cg, left, right->Dtype(), 0);
+        if (left == nullptr) {
+                puts("parseAssign()");
+                usage("incompatible types");
         }
-
-        if (lefttype)
-                left = new Ast{lefttype, right->Dtype(), left, 0};
 
         auto tree = new Ast{AST_ASSIGN, TYPE_INT, left, right, 0};
         return tree;
@@ -357,13 +348,12 @@ Ast *Parser::parseRet(void)
         _lex.Eat(TOK_RETURN);
         _lex.Eat(TOK_LPAREN);
         auto tree = parseExpr(0);
-        auto rettype = tree->Dtype();
-        auto functype = s->Prim();
-        if (!type_compat(_cg, &rettype, &functype, 1))
-                usage("incompatible types");
 
-        if (rettype)
-                tree = new Ast{rettype, functype, tree, 0};
+        tree = modify_type(_cg, tree, s->Prim(), 0);
+        if (tree == nullptr) {
+                puts("parseRet()");
+                usage("incompatible types");
+        }
 
         tree = new Ast{AST_RETURN, TYPE_NONE, tree, 0};
         _lex.Eat(TOK_RPAREN);

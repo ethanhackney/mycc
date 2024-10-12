@@ -1,5 +1,6 @@
 #include "Type.h"
 #include "CodeGen.h"
+#include "Ast.h"
 
 int type_compat(CodeGen& cg, int *left, int *right, int onlyright)
 {
@@ -95,4 +96,62 @@ int val_at(int type)
                 usage("val_at(): invalid type %d", type);
                 exit(EXIT_FAILURE);
         }
+}
+
+static int inttype(int type)
+{
+        switch (type) {
+        case TYPE_CHAR:
+        case TYPE_INT:
+        case TYPE_LONG:
+                return 1;
+        }
+        return 0;
+}
+
+static int ptrtype(int type)
+{
+        switch (type) {
+        case TYPE_VOID_P:
+        case TYPE_CHAR_P:
+        case TYPE_INT_P:
+        case TYPE_LONG_P:
+                return 1;
+        }
+        return 0;
+}
+
+Ast *modify_type(CodeGen& cg, Ast *n, int rtype, int op)
+{
+        int ltype;
+        int lsize;
+        int rsize;
+
+        ltype = n->Dtype();
+        if (inttype(ltype) && inttype(rtype)) {
+                if (ltype == rtype)
+                        return n;
+
+                lsize = cg.PrimSize(ltype);
+                rsize = cg.PrimSize(rtype);
+                if (lsize > rsize)
+                        return nullptr;
+                if (rsize > lsize)
+                        return new Ast{AST_WIDEN, rtype, n, 0};
+        }
+
+        if (ptrtype(ltype)) {
+                if (op == 0 && ltype == rtype)
+                        return n;
+        }
+
+        if (op == AST_ADD || op == AST_SUB) {
+                if (inttype(ltype) && ptrtype(rtype)) {
+                        rsize = cg.PrimSize(val_at(rtype));
+                        if (rsize > 1)
+                                return new Ast{AST_SCALE, rtype, n, rsize};
+                }
+        }
+
+        return nullptr;
 }

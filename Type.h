@@ -25,6 +25,7 @@ enum {
 };
 
 class CodeGen;
+class Ast;
 
 int type_compat(CodeGen& cg, int *left, int *right, int onlyright);
 
@@ -35,5 +36,7 @@ const std::string stype_name(int stype);
 int ptr_to(int type);
 
 int val_at(int type);
+
+Ast *modify_type(CodeGen& cg, Ast *n, int rtype, int op);
 
 #endif

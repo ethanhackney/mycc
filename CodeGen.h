@@ -76,6 +76,8 @@ private:
         size_t addr(const std::string& id);
         // generate dereference
         size_t deref(size_t r, int datatype);
+        // generate constant left shift
+        size_t shl_const(size_t r, int val);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);

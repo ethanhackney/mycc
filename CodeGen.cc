@@ -50,8 +50,22 @@ void CodeGen::GenGlo(const std::string &id)
         auto s = _tab.Get(id);
         int size = PrimSize(s->Prim());
 
-        fprintf(_fp, "\t.comm\t%s,%d,%d\n",
-                        id.c_str(), size, size);
+        fprintf(_fp, "\t.data\n");
+        fprintf(_fp, "\t.globl\t%s\n", id.c_str());
+
+        switch (size) {
+        case 1:
+                fprintf(_fp, "%s:\t.byte\t0\n", id.c_str());
+                break;
+        case 4:
+                fprintf(_fp, "%s:\t.long\t0\n", id.c_str());
+                break;
+        case 8:
+                fprintf(_fp, "%s:\t.quad\t0\n", id.c_str());
+                break;
+        default:
+                usage("unknown type size: %d", size);
+        }
 }
 
 size_t CodeGen::genIfAst(Ast *n)
@@ -152,6 +166,18 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
                 return addr(n->Id());
         case AST_DEREF:
                 return deref(left, n->Left()->Dtype());
+        case AST_SCALE:
+                switch (n->Int()) {
+                case 2:
+                        return shl_const(left, 1);
+                case 4:
+                        return shl_const(left, 2);
+                case 8:
+                        return shl_const(left, 3);
+                default:
+                        right = movInt(n->Int());
+                        return mul(left, right);
+                }
         default:
                 usage("invalid ast type: %s", n->Name().c_str());
                 exit(EXIT_FAILURE);
@@ -481,5 +507,11 @@ size_t CodeGen::deref(size_t r, int datatype)
                                 _stk.Name(r));
                 break;
         }
+        return r;
+}
+
+size_t CodeGen::shl_const(size_t r, int val)
+{
+        fprintf(_fp, "\tsalq\t$%d, %s\n", val, _stk.Name(r));
         return r;
 }

@@ -33,6 +33,7 @@ enum {
         AST_CALL,       // function call
         AST_DEREF,      // pointer dereference
         AST_ADDR,       // get address
+        AST_SCALE,      // scale operation
 };
 
 // abstract syntax tree

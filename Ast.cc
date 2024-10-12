@@ -31,6 +31,7 @@ static void typeok(int type)
         case AST_CALL:
         case AST_DEREF:
         case AST_ADDR:
+        case AST_SCALE:
                 break;
         default:
                 usage("invalid ast type: %d", type);
@@ -164,6 +165,7 @@ std::string Ast::Name(void) const
                 "AST_CALL",
                 "AST_DEREF",
                 "AST_ADDR",
+                "AST_SCALE",
         };
 
         return names[_type];
