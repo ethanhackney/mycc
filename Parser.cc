@@ -47,8 +47,7 @@ Ast *Parser::ParseCompound(void)
                 tree = parseSingle();
 
                 if (tree != nullptr) {
-                        if (tree->Type() == AST_PRINT ||
-                            tree->Type() == AST_ASSIGN ||
+                        if (tree->Type() == AST_ASSIGN ||
                             tree->Type() == AST_RETURN ||
                             tree->Type() == AST_CALL) {
                                 _lex.Eat(TOK_SEMI);
@@ -107,7 +106,15 @@ Ast *Parser::parsePrimary(void)
         return n;
 }
 
-static int tok2ast(int type)
+// static int tok2ast(int type)
+// {
+//         if (type > TOK_EOF && type < TOK_INTLIT)
+//                 return type;
+//         usage("invalid operator: %s", Token{type, ""}.Name().c_str());
+//         exit(EXIT_FAILURE);
+// }
+
+static int bin_ast_op(int type)
 {
         if (type > TOK_EOF && type < TOK_INTLIT)
                 return type;
@@ -115,20 +122,26 @@ static int tok2ast(int type)
         exit(EXIT_FAILURE);
 }
 
+static int right_assoc(int type)
+{
+        return type == TOK_ASSIGN;
+}
+
 static int op_prec(int type)
 {
         static int prec[] = {
                 0,      // TOK_EOF
-                10,     // TOK_PLUS
-                10,     // TOK_MINUS
-                20,     // TOK_STAR
-                20,     // TOK_SLASH
-                30,     // TOK_EQ
-                30,     // TOK_NE
-                40,     // TOK_LT
-                40,     // TOK_GT
-                40,     // TOK_LE
-                40,     // TOK_GE
+                10,     // TOK_ASSIGN
+                20,     // TOK_PLUS
+                20,     // TOK_MINUS
+                30,     // TOK_STAR
+                30,     // TOK_SLASH
+                40,     // TOK_EQ
+                40,     // TOK_NE
+                50,     // TOK_LT
+                50,     // TOK_GT
+                50,     // TOK_LE
+                50,     // TOK_GE
         };
 
         if (type < 0 || type > (int)(sizeof(prec) / sizeof(*prec)))
@@ -145,49 +158,56 @@ Ast *Parser::parseExpr(int ptp)
 {
         auto left = parsePrefix();
         auto tt = _lex.Curr().Type();
-        if (tt == TOK_SEMI || tt == TOK_RPAREN)
+        if (tt == TOK_SEMI || tt == TOK_RPAREN) {
+                left->SetRval(1);
                 return left;
+        }
 
-        while (op_prec(tt) > ptp) {
+        while (op_prec(tt) > ptp || (right_assoc(tt) && op_prec(tt) == ptp)) {
+                Ast *ltmp, *rtmp;
+
                 _lex.Next();
                 auto right = parseExpr(op_prec(tt));
 
-                auto op = tok2ast(tt);
-                auto ltmp = modify_type(_cg, left, right->Dtype(), op);
-                auto rtmp = modify_type(_cg, right, left->Dtype(), op);
-                if (ltmp == nullptr && rtmp == nullptr) {
-                        puts("parseExpr()");
-                        usage("incompatible types");
+                auto asttype = bin_ast_op(tt);
+
+                if (asttype == AST_ASSIGN) {
+                        right->SetRval(1);
+                        right = modify_type(_cg, right, left->Dtype(), 0);
+                        if (left == nullptr)
+                                usage("incompatible expression in assignment");
+
+                        ltmp = left;
+                        left = right;
+                        right = ltmp;
+                } else {
+                        left->SetRval(1);
+                        right->SetRval(1);
+
+                        ltmp = modify_type(_cg, left, right->Dtype(), asttype);
+                        rtmp = modify_type(_cg, right, left->Dtype(), asttype);
+                        if (ltmp == nullptr && rtmp == nullptr) {
+                                puts("parseExpr()");
+                                usage("incompatible types");
+                        }
+
+                        if (ltmp != nullptr)
+                                left = ltmp;
+                        if (rtmp != nullptr)
+                                right = rtmp;
+
                 }
 
-                if (ltmp != nullptr)
-                        left = ltmp;
-                if (rtmp != nullptr)
-                        right = rtmp;
-
-                left = new Ast{tok2ast(tt), left->Dtype(), left, right, 0};
+                left = new Ast{bin_ast_op(tt), left->Dtype(), left, right, 0};
                 tt = _lex.Curr().Type();
-                if (tt == TOK_SEMI || tt == TOK_RPAREN)
+                if (tt == TOK_SEMI || tt == TOK_RPAREN) {
+                        left->SetRval(1);
                         return left;
+                }
         }
 
+        left->SetRval(1);
         return left;
-}
-
-Ast *Parser::parsePrint(void)
-{
-        _lex.Eat(TOK_PRINT);
-        auto expr = parseExpr(0);
-
-        printf("%s\n", type_name(expr->Dtype()).c_str());
-        expr = modify_type(_cg, expr, TYPE_INT, 0);
-        if (expr == nullptr) {
-                puts("parsePrint()");
-                usage("incompatible types");
-        }
-
-        expr = new Ast{AST_PRINT, TYPE_NONE, expr, 0};
-        return expr;
 }
 
 void Parser::parseVarDecl(int type, const std::string& id)
@@ -209,31 +229,6 @@ void Parser::parseVarDecl(int type, const std::string& id)
                 }
                 usage("missing , or ; after identifier");
         }
-}
-
-Ast *Parser::parseAssign(void)
-{
-        auto id = _lex.Curr().Lex();
-
-        _lex.Eat(TOK_IDENT);
-
-        if (_lex.Curr().Type() == TOK_LPAREN)
-                return parseCall(id);
-
-        auto s = _cg.GetGlo(id);
-        auto right = new Ast{AST_LVIDENT, s->Prim(), s->Name()};
-        _lex.Eat(TOK_EQUALS);
-
-        auto left = parseExpr(0);
-
-        left = modify_type(_cg, left, right->Dtype(), 0);
-        if (left == nullptr) {
-                puts("parseAssign()");
-                usage("incompatible types");
-        }
-
-        auto tree = new Ast{AST_ASSIGN, TYPE_INT, left, right, 0};
-        return tree;
 }
 
 Ast *Parser::parseIf(void)
@@ -289,8 +284,6 @@ Ast *Parser::parseSingle(void)
         int type;
 
         switch (_lex.Curr().Type()) {
-        case TOK_PRINT:
-                return parsePrint();
         case TOK_CHAR:
         case TOK_INT:
         case TOK_LONG:
@@ -299,8 +292,6 @@ Ast *Parser::parseSingle(void)
                 _lex.Eat(TOK_IDENT);
                 parseVarDecl(type, id);
                 return nullptr;
-        case TOK_IDENT:
-                return parseAssign();
         case TOK_IF:
                 return parseIf();
         case TOK_WHILE:
@@ -310,9 +301,9 @@ Ast *Parser::parseSingle(void)
         case TOK_RETURN:
                 return parseRet();
         default:
-                usage("bad token: %s", _lex.Curr().Name().c_str());
-                exit(1);
+                return parseExpr(0);
         }
+        return nullptr;
 }
 
 Ast *Parser::ParseFuncDecl(int type, const std::string& id)

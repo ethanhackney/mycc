@@ -7,21 +7,19 @@ static void typeok(int type)
 {
         switch (type) {
         case AST_NONE:
+        case AST_ASSIGN:
         case AST_ADD:
         case AST_SUB:
         case AST_MUL:
         case AST_DIV:
-        case AST_INTLIT:
-        case AST_IDENT:
-        case AST_LVIDENT:
-        case AST_ASSIGN:
         case AST_EQ:
         case AST_NE:
         case AST_LT:
         case AST_GT:
         case AST_LE:
         case AST_GE:
-        case AST_PRINT:
+        case AST_INTLIT:
+        case AST_IDENT:
         case AST_GLUE:
         case AST_IF:
         case AST_WHILE:
@@ -44,7 +42,9 @@ Ast::Ast(void)
         _mid {nullptr},
         _type {AST_NONE},
         _dtype {TYPE_NONE}
-{}
+{
+        _rval = 0;
+}
 
 Ast::Ast(int type, int dtype, Ast *left, Ast *right, int intlit)
         : _left {left},
@@ -55,6 +55,7 @@ Ast::Ast(int type, int dtype, Ast *left, Ast *right, int intlit)
         _dtype {dtype}
 {
         typeok(_type);
+        _rval = 0;
 }
 
 Ast::Ast(int type, int dtype, Ast *left, Ast *right, const std::string &id)
@@ -66,6 +67,7 @@ Ast::Ast(int type, int dtype, Ast *left, Ast *right, const std::string &id)
         _dtype {dtype}
 {
         typeok(_type);
+        _rval = 0;
 }
 
 Ast::Ast(int type, int dtype, int intlit)
@@ -77,6 +79,7 @@ Ast::Ast(int type, int dtype, int intlit)
         _dtype {dtype}
 {
         typeok(_type);
+        _rval = 0;
 }
 
 Ast::Ast(int type, int dtype, const std::string &id)
@@ -88,6 +91,7 @@ Ast::Ast(int type, int dtype, const std::string &id)
         _dtype {dtype}
 {
         typeok(_type);
+        _rval = 0;
 }
 
 Ast::Ast(int type, int dtype, Ast *left, int intlit)
@@ -99,6 +103,7 @@ Ast::Ast(int type, int dtype, Ast *left, int intlit)
         _dtype {dtype}
 {
         typeok(_type);
+        _rval = 0;
 }
 
 Ast::Ast(int type, int dtype, Ast *left, const std::string &id)
@@ -110,6 +115,7 @@ Ast::Ast(int type, int dtype, Ast *left, const std::string &id)
         _dtype {dtype}
 {
         typeok(_type);
+        _rval = 0;
 }
 
 Ast *Ast::Left(void) const
@@ -141,21 +147,19 @@ std::string Ast::Name(void) const
 {
         std::vector<std::string> names {
                 "AST_NONE",
+                "AST_ASSIGN",
                 "AST_ADD",
                 "AST_SUB",
                 "AST_MUL",
                 "AST_DIV",
-                "AST_INTLIT",
-                "AST_IDENT",
-                "AST_LVIDENT",
-                "AST_ASSIGN",
                 "AST_EQ",
                 "AST_NE",
                 "AST_LT",
                 "AST_GT",
                 "AST_LE",
                 "AST_GE",
-                "AST_PRINT",
+                "AST_INTLIT",
+                "AST_IDENT",
                 "AST_GLUE",
                 "AST_IF",
                 "AST_WHILE",
@@ -210,4 +214,14 @@ void Ast::SetType(int type)
 void Ast::SetDtype(int type)
 {
         _dtype = type;
+}
+
+int Ast::Rval(void)
+{
+        return _rval;
+}
+
+void Ast::SetRval(int choice)
+{
+        _rval = choice;
 }

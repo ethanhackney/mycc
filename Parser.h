@@ -16,12 +16,8 @@ private:
         CodeGen         &_cg;   // reference to code generator
         Lexer           &_lex;  // reference to lexical analyzer
 
-        // parse a print statement
-        Ast *parsePrint(void);
         // parse a variable declaration statement
         void parseVarDecl(int type, const std::string& id);
-        // parse assignment statement
-        Ast *parseAssign(void);
         // parse expression
         Ast *parseExpr(int ptp);
         // parse primary

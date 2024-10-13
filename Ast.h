@@ -9,6 +9,7 @@
 // abstract syntax tree types
 enum {
         AST_NONE,       // default type when none given
+        AST_ASSIGN,     // assignment
         AST_ADD,        // add
         AST_SUB,        // subtract
         AST_MUL,        // multiply
@@ -21,9 +22,6 @@ enum {
         AST_GE,         // greater than or equal
         AST_INTLIT,     // integer literal
         AST_IDENT,      // identifier
-        AST_LVIDENT,    // l-value identifier
-        AST_ASSIGN,     // assignment
-        AST_PRINT,      // print statement
         AST_GLUE,       // glue node
         AST_IF,         // if statement
         AST_WHILE,      // while statement
@@ -46,6 +44,7 @@ private:
         int             _type;          // ast type
         int             _intlit;        // integer literal value
         int             _dtype;         // data type of expression
+        int             _rval;          // are we an rvalue?
 public:
         // default constructor
         Ast(void);
@@ -120,6 +119,10 @@ public:
         void SetType(int type);
 
         void SetDtype(int type);
+
+        int Rval(void);
+
+        void SetRval(int choice);
 };
 
 // free ast

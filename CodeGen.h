@@ -78,6 +78,8 @@ private:
         size_t deref(size_t r, int datatype);
         // generate constant left shift
         size_t shl_const(size_t r, int val);
+        // store through a pointer
+        size_t strDeref(size_t r1, size_t r2, int type);
 public:
         // @path:       path name of output file
         CodeGen(const std::string &path);

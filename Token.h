@@ -8,6 +8,7 @@
 // token types
 enum {
         TOK_EOF,        // end of file
+        TOK_ASSIGN,     // "="
         TOK_PLUS,       // "+"
         TOK_MINUS,      // "-"
         TOK_STAR,       // "*"
@@ -24,7 +25,6 @@ enum {
         TOK_LONG,       // "long"
         TOK_INTLIT,     // integer literal
         TOK_SEMI,       // ";"
-        TOK_EQUALS,     // "="
         TOK_IDENT,      // identifier
         TOK_LBRACE,     // "{"
         TOK_RBRACE,     // "}"
@@ -32,7 +32,6 @@ enum {
         TOK_RPAREN,     // ")"
         TOK_AMPER,      // "&"
         TOK_LOGAND,     // "&&"
-        TOK_PRINT,      // "print"
         TOK_IF,         // "if"
         TOK_ELSE,       // "else"
         TOK_WHILE,      // "while"

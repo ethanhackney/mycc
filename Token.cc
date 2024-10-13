@@ -11,6 +11,7 @@ Token::Token(int type, const std::string &lex)
 {
         switch (_type) {
         case TOK_EOF:
+        case TOK_ASSIGN:
         case TOK_PLUS:
         case TOK_MINUS:
         case TOK_STAR:
@@ -27,13 +28,11 @@ Token::Token(int type, const std::string &lex)
         case TOK_LONG:
         case TOK_INTLIT:
         case TOK_SEMI:
-        case TOK_EQUALS:
         case TOK_IDENT:
         case TOK_LBRACE:
         case TOK_RBRACE:
         case TOK_LPAREN:
         case TOK_RPAREN:
-        case TOK_PRINT:
         case TOK_IF:
         case TOK_ELSE:
         case TOK_WHILE:
@@ -63,6 +62,7 @@ std::string Token::Name(void) const
 {
         std::vector<std::string> names {
                 "TOK_EOF",
+                "TOK_ASSIGN",
                 "TOK_PLUS",
                 "TOK_MINUS",
                 "TOK_STAR",
@@ -79,7 +79,6 @@ std::string Token::Name(void) const
                 "TOK_LONG",
                 "TOK_INTLIT",
                 "TOK_SEMI",
-                "TOK_EQUALS",
                 "TOK_IDENT",
                 "TOK_LBRACE",
                 "TOK_RBRACE",
@@ -87,7 +86,6 @@ std::string Token::Name(void) const
                 "TOK_RPAREN",
                 "TOK_AMPER",
                 "TOK_LOGAND",
-                "TOK_PRINT",
                 "TOK_IF",
                 "TOK_ELSE",
                 "TOK_WHILE",

@@ -146,15 +146,19 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         case AST_INTLIT:
                 return movInt(n->Int());
         case AST_IDENT:
-                return movGlo(n->Id());
-        case AST_LVIDENT:
-                return strGlo(r, n->Id());
-        case AST_ASSIGN:
-                return right;
-        case AST_PRINT:
-                GenPrintInt(left);
-                Free();
+                if (n->Rval() || parentop == AST_DEREF)
+                        return movGlo(n->Id());
                 return NIL_REG;
+        case AST_ASSIGN:
+                switch (n->Right()->Type()) {
+                case AST_IDENT:
+                        return strGlo(left, n->Right()->Id());
+                case AST_DEREF:
+                        return strDeref(left, right, n->Right()->Dtype());
+                default:
+                        usage("bad operation: %s", n->Name().c_str());
+                        exit(EXIT_FAILURE);
+                }
         case AST_WIDEN:
                 return widen(left, n->Left()->Dtype(), n->Dtype());
         case AST_RETURN:
@@ -165,7 +169,9 @@ size_t CodeGen::GenAst(Ast *n, size_t r, int parentop)
         case AST_ADDR:
                 return addr(n->Id());
         case AST_DEREF:
-                return deref(left, n->Left()->Dtype());
+                if (n->Rval())
+                        return deref(left, n->Left()->Dtype());
+                return left;
         case AST_SCALE:
                 switch (n->Int()) {
                 case 2:
@@ -514,4 +520,26 @@ size_t CodeGen::shl_const(size_t r, int val)
 {
         fprintf(_fp, "\tsalq\t$%d, %s\n", val, _stk.Name(r));
         return r;
+}
+
+size_t CodeGen::strDeref(size_t r1, size_t r2, int type)
+{
+        std::string reg;
+
+        switch (type) {
+        case TYPE_CHAR:
+                reg = std::string{_stk.Name(r1)} + "b";
+                fprintf(_fp, "\tmovb\t%s, (%s)\n",
+                        reg.c_str(), _stk.Name(r2));
+                break;
+        case TYPE_INT:
+        case TYPE_LONG:
+                fprintf(_fp, "\tmovq\t%s, (%s)\n",
+                        _stk.Name(r1), _stk.Name(r2));
+                break;
+        default:
+                usage("bad deref");
+        }
+
+        return r1;
 }

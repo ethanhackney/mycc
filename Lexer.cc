@@ -85,7 +85,7 @@ Token Lexer::Next(void)
                         return _curr = Token{TOK_EQ, "=="};
                 }
                 _pc = c;
-                return _curr = Token{TOK_EQUALS, "="};
+                return _curr = Token{TOK_ASSIGN, "="};
         case '!':
                 if ((c = nextchar()) == '=')
                         return _curr = Token{TOK_NE, "!="};
@@ -125,8 +125,6 @@ Token Lexer::Next(void)
         } else if (isalpha(c) || c == '_') {
                 auto w = readid(c);
 
-                if (w == "print")
-                        return _curr = Token{TOK_PRINT, w};
                 if (w == "int")
                         return _curr = Token{TOK_INT, w};
                 if (w == "if")
