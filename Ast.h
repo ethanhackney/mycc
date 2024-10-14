@@ -45,6 +45,7 @@ private:
         int             _intlit;        // integer literal value
         int             _dtype;         // data type of expression
         int             _rval;          // are we an rvalue?
+        int             _size;          // size to scale by
 public:
         // default constructor
         Ast(void);
@@ -123,6 +124,10 @@ public:
         int Rval(void);
 
         void SetRval(int choice);
+
+        int Size(void);
+
+        void SetSize(int size);
 };
 
 // free ast

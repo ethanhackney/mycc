@@ -30,6 +30,8 @@ enum {
         TOK_RBRACE,     // "}"
         TOK_LPAREN,     // "("
         TOK_RPAREN,     // ")"
+        TOK_LBRACK,     // "["
+        TOK_RBRACK,     // "]"
         TOK_AMPER,      // "&"
         TOK_LOGAND,     // "&&"
         TOK_IF,         // "if"

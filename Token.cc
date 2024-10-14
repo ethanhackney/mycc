@@ -41,6 +41,8 @@ Token::Token(int type, const std::string &lex)
         case TOK_AMPER:
         case TOK_LOGAND:
         case TOK_COMMA:
+        case TOK_LBRACK:
+        case TOK_RBRACK:
                 break;
         default:
                 usage("bad token type: %d", _type);
@@ -84,6 +86,8 @@ std::string Token::Name(void) const
                 "TOK_RBRACE",
                 "TOK_LPAREN",
                 "TOK_RPAREN",
+                "TOK_LBRACK",
+                "TOK_RBRACK",
                 "TOK_AMPER",
                 "TOK_LOGAND",
                 "TOK_IF",

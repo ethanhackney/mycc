@@ -36,6 +36,8 @@ private:
         Ast *parseCall(const std::string& id);
         // parse prefix
         Ast *parsePrefix(void);
+        // parse array index
+        Ast *parseArrIdx(const std::string& id);
 public:
         // @lex:        reference to lexical analyzer
         // @cg:         reference to code generator

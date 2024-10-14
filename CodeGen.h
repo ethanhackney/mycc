@@ -110,6 +110,8 @@ public:
         // get symbol
         void SetGlo(int prim, int stype, int end, const std::string &id);
 
+        void SetGlo(int prim, int stype, int end, const std::string &id, int size);
+
         // get primitive data type size
         size_t PrimSize(int prim);
 

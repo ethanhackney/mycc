@@ -308,6 +308,11 @@ void CodeGen::SetGlo(int prim, int stype, int end, const std::string &id)
         _tab.Set(id, new Sym{prim, stype, end, id});
 }
 
+void CodeGen::SetGlo(int prim, int stype, int end, const std::string &id, int size)
+{
+        _tab.Set(id, new Sym{prim, stype, end, id, size});
+}
+
 size_t CodeGen::cmp(size_t i, size_t j, const std::string &how)
 {
         std::string breg = std::string{_stk.Name(j)} + "b";

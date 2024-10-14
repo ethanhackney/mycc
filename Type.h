@@ -22,6 +22,7 @@ enum {
 enum {
         STYPE_VAR,      // variable
         STYPE_FUNC,     // function
+        STYPE_ARR,      // array
 };
 
 class CodeGen;

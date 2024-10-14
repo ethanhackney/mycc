@@ -96,9 +96,17 @@ Ast *Parser::parsePrimary(void)
                 if (_lex.Curr().Type() == TOK_LPAREN)
                         return parseCall(id);
 
+                if (_lex.Curr().Type() == TOK_LBRACK)
+                        return parseArrIdx(id);
+
                 s = _cg.GetGlo(id);
                 n = new Ast{AST_IDENT, s->Prim(), s->Name()};
                 break;
+        case TOK_LPAREN:
+                _lex.Eat(TOK_LPAREN);
+                n = parseExpr(0);
+                _lex.Eat(TOK_RPAREN);
+                return n;
         default:
                 usage("invalid primary: %s", _lex.Curr().Name().c_str());
         }
@@ -158,7 +166,7 @@ Ast *Parser::parseExpr(int ptp)
 {
         auto left = parsePrefix();
         auto tt = _lex.Curr().Type();
-        if (tt == TOK_SEMI || tt == TOK_RPAREN) {
+        if (tt == TOK_SEMI || tt == TOK_RPAREN || tt == TOK_RBRACK) {
                 left->SetRval(1);
                 return left;
         }
@@ -200,7 +208,7 @@ Ast *Parser::parseExpr(int ptp)
 
                 left = new Ast{bin_ast_op(tt), left->Dtype(), left, right, 0};
                 tt = _lex.Curr().Type();
-                if (tt == TOK_SEMI || tt == TOK_RPAREN) {
+                if (tt == TOK_SEMI || tt == TOK_RPAREN || tt == TOK_RBRACK) {
                         left->SetRval(1);
                         return left;
                 }
@@ -215,11 +223,27 @@ void Parser::parseVarDecl(int type, const std::string& id)
         auto ident = std::string{id};
 
         for (;;) {
-                _cg.SetGlo(type, STYPE_VAR, 0, ident);
-                _cg.GenGlo(ident);
-                if (_lex.Curr().Type() == TOK_SEMI) {
-                        _lex.Eat(TOK_SEMI);
-                        break;
+                if (_lex.Curr().Type() == TOK_LBRACK) {
+                        _lex.Eat(TOK_LBRACK);
+                        if (_lex.Curr().Type() == TOK_INTLIT) {
+                                _cg.SetGlo(ptr_to(type), STYPE_ARR,
+                                        0, ident,
+                                        atoi(_lex.Curr().Lex().c_str()));
+                                _cg.GenGlo(ident);
+                        }
+                        _lex.Next();
+                        _lex.Eat(TOK_RBRACK);
+                        if (_lex.Curr().Type() == TOK_SEMI) {
+                                _lex.Eat(TOK_SEMI);
+                                break;
+                        }
+                } else {
+                        _cg.SetGlo(type, STYPE_VAR, 0, ident);
+                        _cg.GenGlo(ident);
+                        if (_lex.Curr().Type() == TOK_SEMI) {
+                                _lex.Eat(TOK_SEMI);
+                                break;
+                        }
                 }
                 if (_lex.Curr().Type() == TOK_COMMA) {
                         _lex.Eat(TOK_COMMA);
@@ -409,4 +433,33 @@ void Parser::ParseDecls(void)
                 if (_lex.Curr().Type() == TOK_EOF)
                         break;
         }
+}
+
+static int inttype(int type)
+{
+        switch (type) {
+        case TYPE_CHAR:
+        case TYPE_INT:
+        case TYPE_LONG:
+                return 1;
+        }
+        return 0;
+}
+
+Ast *Parser::parseArrIdx(const std::string& id)
+{
+        auto s = _cg.GetGlo(id);
+        auto left = new Ast{AST_ADDR, s->Prim(), id};
+
+        _lex.Eat(TOK_LBRACK);
+        auto right = parseExpr(0);
+
+        _lex.Eat(TOK_RBRACK);
+        if (!inttype(right->Dtype()))
+                usage("array index is not integer type");
+
+        right = modify_type(_cg, right, left->Dtype(), AST_ADD);
+        left = new Ast{AST_ADD, s->Prim(), left, nullptr, right, 0};
+        left = new Ast{AST_DEREF, val_at(left->Dtype()), left, 0};
+        return left;
 }

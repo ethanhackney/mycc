@@ -225,3 +225,13 @@ void Ast::SetRval(int choice)
 {
         _rval = choice;
 }
+
+int Ast::Size(void)
+{
+        return _size;
+}
+
+void Ast::SetSize(int size)
+{
+        _size = size;
+}

@@ -1,12 +1,8 @@
 #include "Sym.h"
 
-Sym::Sym(int prim, int stype, int end, const std::string &name)
-        : _name {name},
-        _prim {prim},
-        _stype {stype},
-        _end {end}
+static void argsok(int prim, int stype)
 {
-        switch (_prim) {
+        switch (prim) {
         case TYPE_NONE:
         case TYPE_VOID:
         case TYPE_CHAR:
@@ -18,17 +14,37 @@ Sym::Sym(int prim, int stype, int end, const std::string &name)
         case TYPE_LONG_P:
                 break;
         default:
-                usage("invalid primitive data type: %d", _prim);
+                usage("invalid primitive data type: %d", prim);
         }
 
-        switch (_stype) {
+        switch (stype) {
         case STYPE_VAR:
         case STYPE_FUNC:
+        case STYPE_ARR:
                 break;
         default:
-                usage("invalid structural type: %d", _stype);
+                usage("invalid structural type: %d", stype);
         }
-};
+}
+
+Sym::Sym(int prim, int stype, int end, const std::string &name)
+        : _name {name},
+        _prim {prim},
+        _stype {stype},
+        _end {end}
+{
+        argsok(_prim, _stype);
+}
+
+Sym::Sym(int prim, int stype, int end, const std::string &name, int size)
+        : _name {name},
+        _prim {prim},
+        _stype {stype},
+        _end {end},
+        _size {size}
+{
+        argsok(_prim, _stype);
+}
 
 std::string Sym::Name(void) const
 {
